@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<title>Lab 1</title>
+</head>
+<body style="background-color:rgb(190, 190, 190);">
+<div class="content">
+
+
+
+
+<h2>Lab 1: 2D Graphics with HTML Canvas</h2>
+
+<div class="intro">
+<p>This lab consists of three exercises
+on drawing with the HTML canvas 2D graphics API</a>.
+It requires some knowledge of JavaScript, which was covered briefly in
+<a href="http://math.hws.edu/graphicsbook/a1/s3.html">Section&nbsp;A.3</a>.</p>
+
+<p>You will find the neccessary files on moodle for you to download. You can edit
+these files with any text editor like NotePad or VSCode.  </p>
+
+
+<p><b>Turning in your work:</b>
+You will find on moodle submission links, one for each of the following tasks. You only need to submit the ".html" file. The files must have their
+original names, <i>Lab1Ex1.html</i> , <i>Lab1Ex2.html</i> and <i>Lab1Ex3.html</i>.</p>
+
+
+<div class="section">
+<h3>HTML</h3>
+
+<p>This lab is to help you get acquainted with the HTML canvas and how to draw on it. We will be using
+    this canvas for all of the labs in 2D graphics before we move to 3D graphics with OpenGL later on in C.
+    The canvas provides an API for custom rendering using JavaScript. This canvas is then embedded
+    inside the Document Object Model (DOM) of an HTML web page.</p>
+
+<p>A typical HTML page consists of various tags structured in a hierarchical way. Tags are indicated by
+    angle brackets and tags must have an opening (&lt;MyTag&gt;) and closing (&lt;/MyTag&gt;) element. The
+    opening tag contains the type of the tag and the closing element contains a forward slash followed by
+    the tag type again.</p>
+
+<p>The HTML language is a declarative language, which is different to what you have seen so far. HTML
+    code simply describes the content of a web page, you have no control over the flow of execution as you
+    would in an imperative programming language. In HTML, we describe the content of the page that the
+    browser will display. We then use other technologies, like Cascading Style Sheets (CSS) to describe
+    the look/style of the page. Using a programming language like JavaScript (JS), we can perform logic,
+    fetch data asynchronously, and update both the content (HTML) and style (CSS) of the page. Websites
+    typically use all of these technologies together to display dynamic, interactive and visually appealing
+    pages.</p>
+
+<p>As this is not a web development course, we will not focus on the specifics of HTML/CSS/JavaScript
+    but will use JavaScript to paint/draw on an HTML Canvas element.
+    In the example in Listing 1 on the following page, we see an HTML page with “Page Title” as the title
+    that will be shown in the browser window. “My Heading” will be displayed in the default font for an
+    h1 heading (&lt;h1&gt;&lt;/h1&gt;) and there is a paragraph of text (&lt;p&gt;&lt;/p&gt;).
+    We also have a canvas element which we can draw on later. We set the id, width, height, and
+    style properties of the element inside the opening tag. Inside the tag, we also place text that should
+    be shown if the browser does not support the HTML5 canvas.
+    Using the example below, create lab1.html in a text editor. Save the file and
+    then open it in a browser.</p>
+
+<pre>
+    <code>
+    &lt;html&gt
+    &lt;head&gt
+    &lt;title&gtPage Title&lt;/title&gt
+    &lt;/head&gt
+    &lt;body&gt
+    &lt;h1&gtMy Heading&lt;/h1&gt
+    &lt;p&gtThis is a very basic webpage.&lt;/p&gt
+    &lt;canvas id="myCanvas" width="600" height="600"
+                style="border:1px solid #d3d3d3;"&gt
+        Your browser does not support the HTML5 canvas tag.
+    &lt;/canvas&gt
+    &lt;/body&gt
+    &lt;/html&gt
+    </code>
+</pre>
+
+    
+<div class="section">
+<h3>Making Things Dynamic</h3>
+
+<p>As it stands, our webpage is a static page and will always display the same thing. Usually, websites can
+    make their pages dynamic in two different ways – server-side or client-side programming languages.
+    Server-side languages (e.g. PHP, Python, ASPX, C#, JavaScript2 etc.) run on the webserver and are
+    used to generate the HTML/CSS content that gets sent to the web browser. Client-side languages (e.g. JavaScript, VBScript, WebASM) are sent from the server to the browser in text/bytecode and then run
+    locally in the browser which acts as an interpreter.
+    
+    JavaScript is the most popular language used in the browser and the Chrome V8 JavaScript engine is
+    a particularly fast JavaScript runtime bundled in many browsers.
+    In the code below in the "Drawing Section" we have updated the page to include two script sections. One
+    after the body and one in the head. The script sections will be parsed and run as they are encountered
+    by the browser. It is important to note that the rest of the webpage might not have been loaded yet, as
+    the browser loads resources at different times. In the code, we display an alert that is triggered
+    as the browser encounters it. We declare a function called init. We then
+    update the body tag, telling it to call our init function as soon as the page is loaded and ready.
+    Update your lab1.html file and refresh the page in the browser.</p>
+
+
+<div class="section">
+<h3>Drawing</h3>
+In this section, we will do some very basic drawings. At this stage, we will manage the process
+manually, but later on, we’ll see that geometric transformations and hierarchical modelling make this
+process significantly easier.
+
+<pre>
+    <code>
+        &lt;html&gt
+            &lt;head&gt
+            &lt;title&gtPage Title&lt;/title&gt
+            &lt;script&gt
+            function init(){
+            // This will run when the page as fully loaded and the
+            // body's onload event is triggered.
+            alert("Init Function");
+            }
+            &lt;/script&gt
+            &lt;/head&gt
+            &lt;body onload="init()"&gt
+            &lt;h1&gtMy Heading&lt;/h1&gt
+            &lt;p&gtThis is a very basic webpage.&lt;/p&gt
+            &lt;canvas id="myCanvas" width="600" height="600"
+            style="border:1px solid #d3d3d3;"&gt
+            Your browser does not support the HTML5 canvas tag.
+            &lt;/canvas&gt
+            &lt;/body&gt
+            &lt;script&gt
+            // This will run as the browser's interpreter reaches the line.
+            alert("Hello World!");
+            &lt;/script&gt
+        &lt;/html&gt
+
+    </code>
+</pre>
+
+
+The HTML5 canvas provides a context object that we can use to draw to draw on the canvas. At
+this stage, we will be using the 2D context, but later on, in the course, we will do 3D rendering with
+WebGL. In line 1 below we use JavaScript to get a reference to the myCanvas object that was defined in our
+HTML. In line 2 we get the 2D context from the canvas, which gives us an API to stroke/fill points,
+lines, paths, arcs, polygons etc.
+
+<pre>
+<code>
+    var c = document.getElementById("myCanvas");
+    var g = c.getContext("2d");
+</code>
+</pre>
+
+We will put this in the script tag before the init function.
+Now that we have a reference to the graphics context we can use its member functions to render to
+the canvas.
+We distinguish between stroking and filling.
+<ul><li>Stroking - we run a virtual pen along a path.</li>
+    <li>Filling - we paint the inside of a path to colour in a polygon.</li>
+ </ul>
+
+
+
+We can set the colour for these operations using any valid CSS colour string (e.g. “blue”, “rgb(0,0,255)”,
+“#0000FF”) using the following lines:
+
+<pre>
+    <code>
+         // Sets the strokeStyle to black
+         g.strokeStyle = "rgb(0,0,0)";
+         // Sets the fillStyle to red
+         g.fillStyle = "#ff0000";
+    </code>
+</pre>
+
+To create a path we have a few functions:
+    <ul>
+        <li><code>g.beginPath()</code> - must be called to create a new path at the beginning of each new path.</li>
+        <li><code>g.moveTo(x,y)</code> - move the path cursor to (x, y).</li>
+        <li><code>g.lineTo(x,y)</code> - make a line from the previous point on the path to (x,y).</li>
+        <li><code>g.closePath()</code> - make a line from the previous point on the path to the first point in the path.</li>
+    </ul>
+Once you have created a path you can then call:
+    <ul>
+        <li><code>g.stroke()</code> - use the strokeStyle to draw a line over the path.</li>
+        <li><code>g.fill()</code> - use the fillStyle to colour the inside of the path.</li>
+    </ul>
+    <p>We can use the functions above to update our code as shown below and draw a line on the canvas.</p>
+
+
+<pre>
+    <code>
+        &lt;html&gt
+        &lt;head&gt
+        &lt;title&gtPage Title&lt;/title&gt
+        &lt;script&gt
+        var canvas;
+        var graphics;
+        
+        function line(x1, y1, x2, y2){
+        graphics.beginPath();
+        graphics.moveTo(x1, y1);
+        graphics.lineTo(x2, y2);
+        graphics.stroke();
+        }
+        
+        function init(){
+        canvas = document.getElementById("myCanvas");
+        graphics = canvas.getContext("2d");
+        
+        line(0,0,300,300);
+        }
+        &lt;/script&gt
+        &lt;/head&gt
+        &lt;body onload="init()"&gt
+        &lt;h1&gtMy Heading&lt;/h1&gt
+        &lt;p&gtThis is a very basic webpage.&lt;/p&gt
+        &lt;canvas id="myCanvas" width="600" height="600"
+        style="border:1px solid #d3d3d3;"&gt
+        Your browser does not support the HTML5 canvas tag.
+        &lt;/canvas&gt
+        &lt;/body&gt
+        &lt;/html&gt
+
+    </code>
+</pre>
+
+
+<div class="section">
+<h3>Exercise 1: Creating a Clock</h3>
+
+Adapt the code shown above to complete the tasks in this section. We are going to build a clock face:
+    <ol>
+        <li>What is the width and height of the canvas?</li>
+        <li>Based on the line drawn by the code, where is the origin of the canvas and what are the coordinates of the areas marked below?</li>
+        <p style="text-align: center" class="np">
+            <img src="Lab1Ex1A.png" style="background-color:white; border: 2px solid black" height="600" width="600">
+        </p>
+        
+        <li>Based on the code above, create a function that draws axes as shown below.</li>
+        
+        <p style="text-align: center" class="np">
+            <img src="Lab1Ex1B.png" style="background-color:white; border: 2px solid black" height="600" width="600">
+        </p>
+
+        <li>Knowing that you can parameterise a circle with radius, r, and centre, c, as follows, 
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <mrow>
+              <mi>p</mi>
+              <mo stretchy="false">(</mo>
+              <mi>θ</mi>
+              <mo stretchy="false">)</mo>
+              <mo>=</mo>
+              <mrow>
+                <mo>[</mo>
+                <mfrac linethickness="0">
+                  <mrow>
+                    <mi>x</mi>
+                    <mo stretchy="false">(</mo>
+                    <mi>θ</mi>
+                    <mo stretchy="false">)</mo>
+                  </mrow>
+                  <mrow>
+                    <mi>y</mi>
+                    <mo stretchy="false">(</mo>
+                    <mi>θ</mi>
+                    <mo stretchy="false">)</mo>
+                  </mrow>
+                </mfrac>
+                <mo>]</mo>
+              </mrow>
+              <mo>=</mo>
+              <mi>r</mi>
+              <mrow>
+                <mo>[</mo>
+                <mfrac linethickness="0">
+                  <mrow>
+                    <mrow>
+                      <mi>cos</mi>
+                      <mi>θ</mi>
+                    </mrow>
+                  </mrow>
+                  <mrow>
+                    <mrow>
+                      <mi>sin</mi>
+                      <mi>θ</mi>
+                    </mrow>
+                  </mrow>
+                </mfrac>
+                <mo>]</mo>
+              </mrow>
+              <mo>+</mo>
+              <mrow>
+                <mo>[</mo>
+                <mfrac linethickness="0">
+                  <mrow>
+                    <msub>
+                      <mi>c</mi>
+                      <mi>x</mi>
+                    </msub>
+                  </mrow>
+                  <mrow>
+                    <msub>
+                      <mi>c</mi>
+                      <mi>y</mi>
+                    </msub>
+                  </mrow>
+                </mfrac>
+                <mo>]</mo>
+              </mrow>
+              <mo>,</mo>
+            </mrow>
+          </math>
+
+          create a function that draws a circle of radius 240 centered in the middle of the canvas. Draw the circle by generating points by sweeping over different values of θ ∈ [0, 2π] and creating a path from p(θi) to p(θi+1). Close and then stroke the path. See how the circle becomes smoother as you increase the number of points.</li>
+
+
+        <p style="text-align: center" class="np">
+            <img src="Lab1Ex1C.png" style="background-color:white; border: 2px solid black" height="600" width="600">
+        </p>
+
+        <li>We need lines to represent the ‘tics’ for the hours and minutes of our clock. Create a function that adds these lines in. Hint: You want to draw a line between points with a different r but the same θ.</li>
+        
+        <p style="text-align: center" class="np">
+            <img src="Lab1Ex1D.png" style="background-color:white; border: 2px solid black" height="600" width="600">
+        </p>
+
+        <li>Using a JavaScript date object, change the text on screen to show the current datetime.</li>
+        <pre>
+            <code>
+                let d = new Date();
+                document.getElementById("some\_id").innerHTML = d;
+            </code>
+        </pre>
+
+        <li> Create the hour, minute and second hands. You need to create a function that converts the
+            current time into a θ value for each hand before drawing each of the three lines.</li>
+            
+        <p style="text-align: center" class="np">
+            <img src="Lab1Ex1E.png" style="background-color:white; border: 2px solid black" height="600" width="600">
+        </p>
+
+            
+        <li>Use the setInterval function to call your init function every second – setInterval(init,
+            1000). This function should redraw your clock with the current time. Do you notice anything
+            strange?<ul>
+                <li> If you set did not set the colour back to black after drawing the second-hand you’ll notice
+            that this causes a strange side effect.</li>
+                <li> Because we are just drawing every second, the old content of the canvas is still visible. We
+            need to clear the canvas each time we draw so that we have a fresh start for each render of
+            the clock.</li>
+            </ul></li>
+
+        <p style="text-align: center" class="np">
+            <img src="Lab1Ex1F.png" style="background-color:white; border: 2px solid black" height="600" width="600">
+        </p>
+
+        <li>Correct the issues above. Make sure that you reset the colour after drawing the second-hand in
+            red. Before drawing the clock each time, you should wipe the canvas by calling:</li>
+
+            <pre>
+                <code>
+                    graphics.clearRect(0, 0, canvas.width, canvas.height);
+                </code>
+            </pre>
+
+            <p style="text-align: center" class="np">
+                <img src="Lab1Ex1G.png" style="background-color:white; border: 2px solid black" height="600" width="600">
+            </p>
+
+        <li>Finally, see if you can adjust your code so that the hands all move smoothly around the clock
+            (i.e. the hour hand can be at 3.3) and the second hand is updated every 10ms. Also, remove the
+            axes/guidelines that we added earlier to help us design the clock.</li>
+
+            <p style="text-align: center" class="np">
+                <img src="Lab1Ex1H.png" style="background-color:white; border: 2px solid black" height="600" width="600">
+            </p>
+
+        <li>At this stage you are ready to submit Exercise 1, to get marks for innovation look to use your creativity and add in some additional cool element. This just needs to be something novel to this lab, like animation or colouring or any additional feature like including dates, do not be limited by these suggestions have fun</li>
+    
+    </ol>
+
+
+    
+
+
+<div class="section">
+<h3>Exercise 2:  Shapes</h3>
+
+<p> For the second part of the lab you will work with Lab1Ex2.html, you should
+add new drawing code to the <i>draw</i>() function in <i>Lab2Ex2.html</i>
+to draw the following picture, including the dividing lines:</p>
+
+<p style="text-align: center" class="np">
+<img src="Lab1Ex2.png" style="background-color:white; border: 2px solid black" height="600" width="600">
+</p>
+
+<p>The heart can be drawn as a path made up of two Bezier curves. I suggest that you
+try making a heart in the
+<a href="http://math.hws.edu/graphicsbook/demos/c2/cubic-bezier.html">Bezier curve demo</a>
+from <a href="http://math.hws.edu/graphicsbook/c2/s2.html">Section&nbsp;2.2</a>
+to get some idea of where the control points need to be placed.  It will take some
+experimentation to get the shape right!</p>
+
+<p>The size of the canvas is 600-by-600.  You can use the standard pixel coordinates, or you can
+apply a transformation to use a more convenient coordinate system.  If you do the later, remember
+that line width is also transformed, and you will probably find it convenient to set the line width
+as a multiple of the global variable <i>pixelSize</i>.  You also have the option of drawing
+the objects directly in world coordinates or using modeling transformations.  In fact, I mostly
+just used plain pixel coordinates when I drew the picture.</p>
+
+<p>The 2D graphics context in the program is named <i>graphics</i>.  It has all the properties
+discussed in <a href="http://math.hws.edu/graphicsbook/c2/s6.html">Section&nbsp;2.6</a> of
+the textbook.  In addition, the following non-standard drawing commands have been added to
+the graphics context:</p>
+
+<ul>
+<li><code>graphics.strokeLine(x1,y1,x2,y2)</code> — draw the line segment from (x1,y1) to (x2,y2).</li>
+<li><code>graphics.strokeCircle(x,y,r)</code> — stroke the circle with center (x,y) and radius&nbsp;r.</li>
+<li><code>graphics.strokeOval(x,y,rx,ry)</code> — stroke the oval with center (x,y), horizontal radius rx, and vertical radius&nbsp;ry.</li>
+<li><code>graphics.strokePoly(x1,y1,x2,y2,x3,y3,...)</code> — stroke the polygon with vertices (x1,y1), (x2,y2), (x3,y3),&nbsp;...</li>
+<li><code>graphics.fillCircle(x,y,r)</code> — fill the circle with center (x,y) and radius&nbsp;</li>
+<li><code>graphics.fillOval(x,y,rx,ry)</code> — fill the oval with center (x,y), horizontal radius rx, and vertical radius&nbsp;ry.</li>
+<li><code>graphics.fillPoly(x1,y1,x2,y2,x3,y3,...)</code> — fill the polygon with vertices (x1,y1), (x2,y2), (x3,y3),&nbsp;...</li>
+</ul>
+
+</div>
+
+<div class="section">
+<h3>Exercise 3: Mousing</h3>
+
+<p>For the third exercise, you will work with Lab1Ex3.html,
+a program that implements mouse interaction.  As it stands, the program draws a sequence of squares
+as the user drags the mouse on the canvas.  You will add several additional drawing tools that
+respond to a mouse drag in different ways.</p>
+
+<p>A drag action consists of a mouse down event, a sequence of mouse move events, and
+a mouse up event.  The program defines functions to respond to these events.  To implement
+the new tools, you will work mostly in the function <i>doMouseMove</i>(), which responds to
+mouse move events.  You might also need to add something to <i>doMouseDown</i>().  Aside from
+implementing the tools, there are a few more things that have to be added to the program.</p>
+
+<p><b>First,</b> you should add a "Clear" button to the program.  When the user clicks the
+button, the canvas should be filled with white.  To do that, you need to add
+the HTML code for the button itself to the &lt;body&gt; of the web page.  That takes the
+form</p>
+
+<pre class="code">&lt;button id="clearButton"&gt;Clear&lt;/button&gt;
+</pre>
+
+<p class="np">And you need to set up an event handler to respond to click events on the button.
+To do that, define a JavaScript function to clear the canvas.  Then, as part of initialization,
+install it as the event handler using a command of the form</p>
+
+<pre class="code">document.getElementById("clearButton").onclick = doClear;
+</pre>
+
+<p class="np">where <i>doClear</i> is the name of the function.</p>
+
+<p><b>Second,</b> add at least one new color to the &lt;select&gt; element that creates
+the Color popup menu.  Implement the new color by adding code to the <i>doMouseMove</i>
+function.</p>
+
+<p><b>Third,</b> add a new &lt;select&gt; element that will let the user select the
+drawing tool that they want to use, and implement that menu by adding code to the
+mouse-handling functions.  This is the major part of the exercise.  You should
+add at least four new tools.  They must include:</p>
+
+<ul>
+<li>A tool similar to the original squares tool, except that it draws a non-trivial shape
+such as a star or a heart.  (Non-trivial means that you need to create it as a path
+or polygon.  In particular, <b>not</b> just circles or ovals.)</li>
+<li>A Curve tool that simply draws a line segment from the previous mouse position to the current mouse position.
+Note that the variables <i>prevX</i> and <i>prevY</i> are already defined to represent the
+previous mouse position.</li>
+<li>A tool that uses the starting position of the mouse, which is given by the variables
+<i>startX</i> and <i>startY</i>, as well as the current position.  For example, draw
+a circle with center at the starting point and passing through the current position.</li>
+<li>One additional tool of your choice.  (You might consider an "erase" tool that
+simply draws in white.)</li>
+</ul>
+
+<p class="np">Here, for example, is a drawing made with my completed version of the
+program, showing examples of four tools:</p>
+
+<p style="text-align: center" class="np">
+<img src="Lab1Ex3.png" style="background-color:white; border: 2px solid black" height="480" width="600">
+</p>
+
+
+</div>
+
+
+</div>
+
+
+</body></html>

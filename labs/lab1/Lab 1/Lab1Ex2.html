@@ -37,9 +37,84 @@
      */
     function draw() {
     
-        graphics.clearRect(0,0,600,600);        
+        graphics.clearRect(0,0,600,600); 
+         
         // TODO: insert code to draw the image for Exercise 1!
+         drawStripes();      
+        drawChevron();       
+        drawEllipsePyramid(); 
+        drawHeart();          
+    }
+      
+  function drawStripes() {
+        graphics.fillStyle = "orange";
+        for (var y = 0; y < 300; y += 20) {
+            graphics.fillRect(0, y, 300, 10);
+        }
+    }
 
+      function drawChevron() {
+        graphics.fillStyle = "blue";
+        graphics.fillPoly(
+            350, 50,   // top-left corner
+            550, 50,   // top-right corner
+            550, 250,  // bottom-right corner
+            450, 150,  // notch tip (pulled up into the middle)
+            350, 250   // bottom-left corner
+        );
+    }
+
+    function drawEllipsePyramid() {
+        var cx = 150;              // horizontal center of this quadrant
+        var colors = ["magenta", "cyan", "green", "yellow", "red"];
+        var centerYs  = [345, 385, 430, 480, 545]; // top to bottom
+        var radiiX    = [45, 60, 75, 95, 120];     // top to bottom
+        var radiiY    = [22, 25, 28, 32, 35];
+ 
+        for (var i = 0; i < colors.length; i++) {
+            graphics.fillStyle = colors[i];
+            graphics.fillOval(cx, centerYs[i], radiiX[i], radiiY[i]);
+        }
+    }
+
+       function drawHeart() {
+        var cx = 450, topY = 350;   // top-center dip of the heart
+        var w = 200, h = 220;       // width and height of the heart
+ 
+        graphics.beginPath();
+        graphics.moveTo(cx, topY + h * 0.3);
+ 
+        // left lobe: from the top-center dip, up and over to the left, back down
+        graphics.bezierCurveTo(
+            cx, topY,
+            cx - w / 2, topY,
+            cx - w / 2, topY + h * 0.3
+        );
+        // down the left side to the bottom point
+        graphics.bezierCurveTo(
+            cx - w / 2, topY + (h + h * 0.3) / 2,
+            cx, topY + (h + h * 0.3) / 2,
+            cx, topY + h
+        );
+        // up the right side to the top-center dip
+        graphics.bezierCurveTo(
+            cx, topY + (h + h * 0.3) / 2,
+            cx + w / 2, topY + (h + h * 0.3) / 2,
+            cx + w / 2, topY + h * 0.3
+        );
+        
+        graphics.bezierCurveTo(
+            cx + w / 2, topY,
+            cx, topY,
+            cx, topY + h * 0.3
+        );
+ 
+        graphics.closePath();
+        graphics.fillStyle = "red";
+        graphics.fill();
+        
+        
+        
     }
     
     

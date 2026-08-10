@@ -1,25 +1,427 @@
 <!DOCTYPE html>
-        <html>
-            <head>
-            <title>Page Title</title>
-            <script>
-            function init(){
-            // This will run when the page as fully loaded and the
-            // body's onload event is triggered.
-            alert("Init Function");
-            }
-            </script>
-            </head>
-            <body onload="init()">
-            <h1>My Heading</h1>
-            <p>This is a very basic webpage.</p>
-            <canvas id="myCanvas" width="600" height="600"
-            style="border:1px solid #d3d3d3;">
-            Your browser does not support the HTML5 canvas tag.
-            </canvas>
-            </body>
-            <script>
-            // This will run as the browser's interpreter reaches the line.
-            alert("Hello World!");
-            </script>
-        </html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Lab 1, Exercise 1: Vintage Pocket Watch Clock</title>
+<style>
+    body {
+        background-color: #14161c;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: Georgia, "Times New Roman", serif;
+        color: #e8d9a8;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    canvas {
+        display: block;
+    }
+    #timeText {
+        margin-top: 10px;
+        min-height: 28px;
+        font-size: 20px;
+        letter-spacing: 1px;
+        opacity: 0;
+        transition: opacity 1.2s ease-in;
+        text-align: center;
+    }
+    #timeText.visible {
+        opacity: 1;
+    }
+</style>
+<script>
+"use strict";
+
+var canvas;
+var graphics;
+
+// ---- Layout constants ----
+var ANCHOR_X, ANCHOR_Y;   // fixed point at the top where the chain is nailed to the screen
+var CHAIN_LENGTH = 250;   // length of chain from anchor down to the watch's bail (ring)
+var CASE_RADIUS  = 90;    // radius of the watch case
+var FACE_RADIUS  = CASE_RADIUS - 16;
+
+// ---- Animation timing state (all based on elapsed milliseconds, not frame counts,
+//      so the motion is smooth no matter the screen's refresh rate) ----
+var startTime = null;        // timestamp of the very first animation frame
+var FALL_DURATION   = 1100;  // ms for the watch to drop into place
+var LID_DELAY        = 300;  // ms to wait after landing before the lid starts to open
+var LID_OPEN_DURATION = 900; // ms for the lid to swing open
+var LID_OPEN_ANGLE = -1.92;  // radians (~ -110 degrees): how far the lid swings open
+
+var landTime = null;         // timestamp (relative) when the fall finished; set once
+var lidStartTime = null;     // timestamp (relative) when the lid starts opening; set once
+
+/**
+ * Simple easing functions.
+ */
+function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
+function easeOutBack(t) {
+    var c1 = 1.4;
+    var c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+/**
+ * Computes every piece of animation state (pendulum length, swing angle,
+ * lid angle) for a given elapsed time "t" (ms since the page started
+ * animating). Keeping this separate from drawing makes it easy to reason
+ * about, and easy to test with fixed values.
+ */
+function computeAnimationState(t) {
+
+    var state = {};
+
+    // --- Phase 1: falling ---
+    var fallT = Math.min(t / FALL_DURATION, 1);
+    var fallEase = easeOutBack(fallT);
+    state.pendulumLength = fallEase * (CHAIN_LENGTH + CASE_RADIUS);
+
+    if (fallT >= 1 && landTime === null) {
+        landTime = t;
+    }
+
+    // --- Phase 2: swinging like a pendulum, once landed ---
+    var swingAngle = 0;
+    if (landTime !== null) {
+        var tSinceLand = (t - landTime) / 1000; // seconds
+        var startAmp = 0.35;   // radians, initial swing right after landing
+        var idleAmp  = 0.05;   // radians, gentle resting sway
+        var decay = 0.5;
+        var amplitude = idleAmp + (startAmp - idleAmp) * Math.exp(-decay * tSinceLand);
+        var period = 2.2; // seconds per full swing
+        swingAngle = amplitude * Math.sin((2 * Math.PI / period) * tSinceLand);
+    }
+    state.swingAngle = swingAngle;
+
+    // --- Phase 3: the lid opening, a little while after landing ---
+    var lidOpenProgress = 0;
+    if (landTime !== null) {
+        if (lidStartTime === null) {
+            lidStartTime = landTime + LID_DELAY;
+        }
+        if (t >= lidStartTime) {
+            var lidT = Math.min((t - lidStartTime) / LID_OPEN_DURATION, 1);
+            lidOpenProgress = easeOutBack(lidT);
+        }
+    }
+    state.lidAngle = LID_OPEN_ANGLE * lidOpenProgress;
+    state.lidFullyOpen = lidOpenProgress >= 0.98;
+
+    return state;
+}
+
+/**
+ * Draws one horizontal/vertical tick, used while designing (kept here only
+ * as a labelled reference to the technique from the lab -- not called in
+ * the final animation, since the finished piece has no visible axes).
+ */
+function p(theta, r, cx, cy) {
+    // The core formula from the lab: any point at angle theta and radius r
+    // around a center (cx,cy) is  p(theta) = r*[cos(theta), sin(theta)] + [cx,cy]
+    return { x: cx + r * Math.cos(theta), y: cy + r * Math.sin(theta) };
+}
+
+/**
+ * Draws the chain: a straight line from the anchor down to the bail
+ * (the ring at the top of the watch case), decorated with small oval
+ * links so it reads as a chain rather than a plain line.
+ */
+function drawChain(bailX, bailY) {
+    graphics.strokeStyle = "#8a7638";
+    graphics.lineWidth = 2;
+    graphics.strokeLine(ANCHOR_X, ANCHOR_Y, bailX, bailY);
+
+    // small nail/hook at the anchor point
+    graphics.fillStyle = "#555";
+    graphics.fillCircle(ANCHOR_X, ANCHOR_Y, 4);
+
+    // chain links: small ellipses evenly spaced along the line
+    var dx = bailX - ANCHOR_X;
+    var dy = bailY - ANCHOR_Y;
+    var len = Math.sqrt(dx*dx + dy*dy);
+    if (len < 1) return;
+    var linkSpacing = 14;
+    var numLinks = Math.floor(len / linkSpacing);
+    var angle = Math.atan2(dy, dx);
+
+    graphics.save();
+    graphics.strokeStyle = "#c9a94a";
+    graphics.lineWidth = 1.4;
+    for (var i = 1; i < numLinks; i++) {
+        var lx = ANCHOR_X + (dx / numLinks) * i;
+        var ly = ANCHOR_Y + (dy / numLinks) * i;
+        graphics.save();
+        graphics.translate(lx, ly);
+        graphics.rotate(angle + (i % 2 === 0 ? Math.PI / 2 : 0));
+        graphics.strokeOval(0, 0, 5, 3);
+        graphics.restore();
+    }
+    graphics.restore();
+}
+
+/**
+ * Draws the bail (the little loop + crown at the top of the case that the
+ * chain attaches to). Drawn in the watch's local, un-rotated coordinates
+ * (i.e. called from inside the translate/rotate block in drawWatch).
+ */
+function drawBail() {
+    graphics.fillStyle = "#caa14b";
+    graphics.strokeStyle = "#7a611f";
+    graphics.lineWidth = 1.5;
+    graphics.fillRect(-6, -CASE_RADIUS - 14, 12, 12);
+    graphics.strokeRect(-6, -CASE_RADIUS - 14, 12, 12);
+    graphics.strokeStyle = "#7a611f";
+    graphics.lineWidth = 2;
+    graphics.strokeOval(0, -CASE_RADIUS - 20, 8, 8);
+}
+
+/**
+ * Draws the gold case, the white face, the hour ticks/numerals, and the
+ * three clock hands -- all in local coordinates centered on (0,0), with
+ * "up" (negative y) pointing toward the chain. Called from inside the
+ * translate/rotate block in drawWatch.
+ */
+function drawFaceAndHands() {
+
+    // --- case (outer gold ring) ---
+    var caseGradient = graphics.createRadialGradient(-25, -25, 10, 0, 0, CASE_RADIUS);
+    caseGradient.addColorStop(0, "#f5e08a");
+    caseGradient.addColorStop(1, "#a9812c");
+    graphics.fillStyle = caseGradient;
+    graphics.fillCircle(0, 0, CASE_RADIUS);
+    graphics.strokeStyle = "#5c4813";
+    graphics.lineWidth = 3;
+    graphics.strokeCircle(0, 0, CASE_RADIUS);
+
+    // --- face (white dial) ---
+    graphics.fillStyle = "#f7f2e2";
+    graphics.fillCircle(0, 0, FACE_RADIUS);
+    graphics.strokeStyle = "#333";
+    graphics.lineWidth = 1.5;
+    graphics.strokeCircle(0, 0, FACE_RADIUS);
+
+    // --- hour ticks + numerals, using the p(theta) parametric formula ---
+    graphics.strokeStyle = "#222";
+    graphics.fillStyle = "#222";
+    for (var i = 0; i < 12; i++) {
+        var theta = -Math.PI / 2 + i * (2 * Math.PI / 12);
+        var isMajor = (i % 3 === 0); // 12, 3, 6, 9 get longer ticks
+
+        var rOuter = FACE_RADIUS - 6;
+        var rInner = isMajor ? FACE_RADIUS - 22 : FACE_RADIUS - 14;
+
+        var pOuter = p(theta, rOuter, 0, 0);
+        var pInner = p(theta, rInner, 0, 0);
+
+        graphics.lineWidth = isMajor ? 2.5 : 1.2;
+        graphics.strokeLine(pInner.x, pInner.y, pOuter.x, pOuter.y);
+
+        var pNum = p(theta, FACE_RADIUS - 34, 0, 0);
+        graphics.font = (isMajor ? "bold 15px" : "13px") + " Georgia, serif";
+        graphics.textAlign = "center";
+        graphics.textBaseline = "middle";
+        var hourNumber = (i === 0) ? 12 : i;
+        graphics.fillText(String(hourNumber), pNum.x, pNum.y);
+    }
+
+    // --- hands: computed from the real current time, using fractional
+    //     minutes/seconds so the motion is smooth rather than jumping ---
+    var now = new Date();
+    var hours   = now.getHours() % 12;
+    var minutes = now.getMinutes();
+    var seconds = now.getSeconds();
+    var ms      = now.getMilliseconds();
+
+    var secFrac = seconds + ms / 1000;
+    var minFrac = minutes + secFrac / 60;
+    var hourFrac = hours + minFrac / 60;
+
+    var hourAngle   = -Math.PI / 2 + (hourFrac / 12) * 2 * Math.PI;
+    var minuteAngle = -Math.PI / 2 + (minFrac / 60) * 2 * Math.PI;
+    var secondAngle = -Math.PI / 2 + (secFrac / 60) * 2 * Math.PI;
+
+    drawHand(hourAngle,   FACE_RADIUS * 0.48, 4, "#222");
+    drawHand(minuteAngle, FACE_RADIUS * 0.72, 3, "#222");
+    drawHand(secondAngle, FACE_RADIUS * 0.82, 1.5, "#a33");
+
+    // center pin
+    graphics.fillStyle = "#222";
+    graphics.fillCircle(0, 0, 3.5);
+}
+
+/**
+ * Draws one clock hand as a line from the center out to the tip, using the
+ * same p(theta) parametric formula as the tick marks.
+ */
+function drawHand(theta, length, width, color) {
+    var tip = p(theta, length, 0, 0);
+    graphics.strokeStyle = color;
+    graphics.lineWidth = width;
+    graphics.strokeLine(0, 0, tip.x, tip.y);
+}
+
+/**
+ * Draws the hinged lid. In local coordinates, the hinge sits at the left
+ * edge of the case (-CASE_RADIUS, 0). When lidAngle is 0 the lid lies
+ * exactly on top of the case (closed); as lidAngle swings negative, it
+ * rotates up and away, revealing the face underneath.
+ */
+function drawLid(lidAngle) {
+    graphics.save();
+    graphics.translate(-CASE_RADIUS, 0);
+    graphics.rotate(lidAngle);
+
+    var lidGradient = graphics.createRadialGradient(10, -25, 5, CASE_RADIUS, 0, CASE_RADIUS * 1.3);
+    lidGradient.addColorStop(0, "#fff3c4");
+    lidGradient.addColorStop(1, "#a9812c");
+    graphics.fillStyle = lidGradient;
+    graphics.fillCircle(CASE_RADIUS, 0, CASE_RADIUS);
+    graphics.strokeStyle = "#5c4813";
+    graphics.lineWidth = 3;
+    graphics.strokeCircle(CASE_RADIUS, 0, CASE_RADIUS);
+
+    // a simple engraved-looking decorative swirl on the lid's outer face
+    graphics.strokeStyle = "#7a611f";
+    graphics.lineWidth = 1;
+    graphics.strokeCircle(CASE_RADIUS, 0, CASE_RADIUS - 12);
+
+    graphics.restore();
+}
+
+/**
+ * Master draw function for one animation frame.
+ */
+function drawWatch(state) {
+
+    graphics.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Position of the bail, swinging like a pendulum around the fixed anchor.
+    var bailX = ANCHOR_X + state.pendulumLength * Math.sin(state.swingAngle);
+    var bailY = ANCHOR_Y + state.pendulumLength * Math.cos(state.swingAngle);
+
+    drawChain(bailX, bailY);
+
+    // The case center sits CASE_RADIUS further along the same pendulum line.
+    var caseCenterX = ANCHOR_X + (state.pendulumLength + CASE_RADIUS) * Math.sin(state.swingAngle);
+    var caseCenterY = ANCHOR_Y + (state.pendulumLength + CASE_RADIUS) * Math.cos(state.swingAngle);
+
+    // Only draw the case once it has started dropping in (avoids a flash
+    // of a full-size watch at the very first frame).
+    if (state.pendulumLength > 1) {
+        graphics.save();
+        graphics.translate(caseCenterX, caseCenterY);
+        graphics.rotate(state.swingAngle);
+
+        drawBail();
+        drawFaceAndHands();
+        drawLid(state.lidAngle);
+
+        graphics.restore();
+    }
+}
+
+/**
+ * The main animation loop, driven by requestAnimationFrame for smooth,
+ * continuous motion tied to real elapsed time rather than a fixed tick.
+ */
+function animationLoop(timestamp) {
+    if (startTime === null) {
+        startTime = timestamp;
+    }
+    var t = timestamp - startTime;
+
+    var state = computeAnimationState(t);
+    drawWatch(state);
+
+    var timeTextEl = document.getElementById("timeText");
+    if (state.lidFullyOpen) {
+        var now = new Date();
+        var dateStr = now.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        var timeStr = now.toLocaleTimeString();
+        timeTextEl.textContent = dateStr + "  \u2014  " + timeStr;
+        timeTextEl.classList.add("visible");
+    }
+
+    requestAnimationFrame(animationLoop);
+}
+
+function init() {
+    try {
+        canvas = document.getElementById("canvas");
+        graphics = canvas.getContext("2d");
+    } catch (e) {
+        document.getElementById("canvasholder").innerHTML =
+            "<p>Canvas graphics is not supported.<br>An error occurred while initializing graphics.</p>";
+        return;
+    }
+    addGraphicsContextExtras(graphics);
+
+    ANCHOR_X = canvas.width / 2;
+    ANCHOR_Y = 30;
+
+    requestAnimationFrame(animationLoop);
+}
+
+/**
+ * Same helper-function collection used throughout the lab: adds
+ * strokeLine, fillCircle, strokeCircle, fillOval, strokeOval, fillPoly,
+ * strokePoly, and getRGB to a 2D canvas graphics context.
+ */
+function addGraphicsContextExtras(graphics) {
+    graphics.strokeLine = function(x1,y1,x2,y2) {
+       this.beginPath(); this.moveTo(x1,y1); this.lineTo(x2,y2); this.stroke();
+    }
+    graphics.fillCircle = function(x,y,r) {
+       this.beginPath(); this.arc(x,y,r,0,2*Math.PI,false); this.fill();
+    }
+    graphics.strokeCircle = function(x,y,radius) {
+       this.beginPath(); this.arc(x,y,radius,0,2*Math.PI,false); this.stroke();
+    }
+    graphics.fillPoly = function() {
+        if (arguments.length < 6) return;
+        this.beginPath();
+        this.moveTo(arguments[0],arguments[1]);
+        for (var i = 2; i+1 < arguments.length; i = i + 2) this.lineTo(arguments[i],arguments[i+1]);
+        this.closePath();
+        this.fill();
+    }
+    graphics.strokePoly = function() {
+        if (arguments.length < 4) return;
+        this.beginPath();
+        this.moveTo(arguments[0],arguments[1]);
+        for (var i = 2; i+1 < arguments.length; i = i + 2) this.lineTo(arguments[i],arguments[i+1]);
+        this.closePath();
+        this.stroke();
+    }
+    graphics.fillOval = function(x,y,horizontalRadius,verticalRadius) {
+       this.save(); this.translate(x,y); this.scale(horizontalRadius,verticalRadius);
+       this.beginPath(); this.arc(0,0,1,0,2*Math.PI,false); this.restore(); this.fill();
+    }
+    graphics.strokeOval = function(x,y,horizontalRadius,verticalRadius) {
+       this.save(); this.translate(x,y); this.scale(horizontalRadius,verticalRadius);
+       this.beginPath(); this.arc(0,0,1,0,2*Math.PI,false); this.restore(); this.stroke();
+    }
+    graphics.getRGB = function(x,y) {
+        var color = this.getImageData(x,y,1,1);
+        return color.data;
+    }
+}
+</script>
+</head>
+<body onload="init()">
+
+<div id="canvasholder">
+<canvas id="canvas" width="600" height="700">
+Canvas not supported.
+</canvas>
+</div>
+<div id="timeText"></div>
+
+</body>
+</html>

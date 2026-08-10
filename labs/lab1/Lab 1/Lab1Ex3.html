@@ -6,7 +6,7 @@
 -->
 <head>
 <meta charset="UTF-8">
-<title>Lab 2, Exercise 2</title>
+<title>Lab 1, Exercise 3</title>
 <style>
     /* This style section is here to make the canvas more obvious on the
        page.  It is white on a light gray page background, with a thin
@@ -54,13 +54,70 @@
      * doMouseDrag, and possibly doMouseUp to change the reponse to
      * mouse events.  As an example, this program does some simple drawing.
      */
+   function setColorFromChoice() {
+        var colorChoice = Number(document.getElementById("colorChoice").value);
+        var color;
+        if (colorChoice == 0) {
+            color = randomColorString();
+        }
+        else if (colorChoice == 1) {
+            color = "red";
+        }
+        else if (colorChoice == 2) {
+            color = "green";
+        }
+        else if (colorChoice == 3) {
+            color = "blue";
+        }
+        else if (colorChoice == 4) {
+            color = "purple";  // the new color added to the menu
+        }
+        graphics.fillStyle = color;
+        graphics.strokeStyle = color;
+    }
+ 
+    /**
+     * Draws (fills) a five-pointed star centered at (cx,cy), using
+     * graphics.fillPoly to connect the alternating outer/inner points.
+     * outerRadius/innerRadius control the "spikiness" of the star.
+     */
+    function drawStar(cx, cy, outerRadius, innerRadius, numPoints) {
+        var points = [];
+        var angleStep = Math.PI / numPoints;  // half-step: alternates outer/inner
+        for (var i = 0; i < 2 * numPoints; i++) {
+            var r = (i % 2 == 0) ? outerRadius : innerRadius;
+            var angle = i * angleStep - Math.PI / 2;  // start pointing up
+            points.push(cx + r * Math.cos(angle));
+            points.push(cy + r * Math.sin(angle));
+        }
+        graphics.fillPoly.apply(graphics, points);
+    }
+ 
+    /**
+     * Clears the canvas back to a blank white rectangle.  Wired up to the
+     * Clear button's onclick handler below.
+     */
+    function doClear() {
+        graphics.fillStyle = "white";
+        graphics.fillRect(0, 0, canvas.width, canvas.height);
+    }
+ 
+    /**
+     * This function is called in init() to set up mouse event handling
+     * on the canvas.  You can modify the nested functions doMouseDown,
+     * doMouseDrag, and possibly doMouseUp to change the reponse to
+     * mouse events.  As an example, this program does some simple drawing.
+     */
     function installMouseHandler() {
-
+ 
         var dragging = false;  // set to true when a drag action is in progress.
         var startX, startY;    // coordinates of mouse at start of drag.
         var prevX, prevY;      // previous mouse position during a drag.
         
         var colorChoice;  // Integer code for the selected color in the "colorChoide"
+                          // popup menu.  The value is assigned in doMouseDown.
+ 
+        var toolChoice;   // Integer code for the selected tool in the "toolChoice"
                           // popup menu.  The value is assigned in doMouseDown.
         
         function doMouseDown(evt) {
@@ -84,7 +141,7 @@
                 document.addEventListener("mouseup", doMouseUp, false);
             }
             colorChoice = Number(document.getElementById("colorChoice").value);
-            // TODO: Anything else to do when mouse is first pressed?
+            toolChoice = Number(document.getElementById("toolChoice").value);
         }
         
         function doMouseMove(evt) {
@@ -98,27 +155,48 @@
             y = Math.round(evt.clientY - r.top);
             
             /*------------------------------------------------------------*/
-            /* TODO: Add support for more drawing tools. */
-            
+            /* Tool dispatch: each tool below is a separate drawing mode,   */
+            /* selected from the "toolChoice" popup menu.                  */
+ 
             if ( Math.abs(x-prevX) + Math.abs(y-prevY) < 3 ) {
-                return;  // don't draw squares too close together
+                return;  // don't draw too close together
             }
-                
-            if (colorChoice == 0) {
-                graphics.fillStyle = randomColorString();
+ 
+            setColorFromChoice();  // sets graphics.fillStyle/strokeStyle from colorChoice
+ 
+            if (toolChoice == 0) {
+                // TOOL 0: Square stamp (the original drawing tool).
+                graphics.fillRect(x-20,y-20,40,40);
+                graphics.strokeRect(x-20,y-20,40,40);
             }
-            else if (colorChoice == 1) {
-                graphics.fillStyle = "red";
+            else if (toolChoice == 1) {
+                // TOOL 1: Star stamp -- a non-trivial polygon shape, stamped
+                // at the current mouse position as you drag.
+                drawStar(x, y, 18, 8, 5);
             }
-            else if (colorChoice == 2) {
-                graphics.fillStyle = "green";
+            else if (toolChoice == 2) {
+                // TOOL 2: Freehand curve -- connects the previous mouse
+                // position to the current one, each time doMouseMove fires.
+                graphics.lineWidth = 3;
+                graphics.strokeLine(prevX, prevY, x, y);
             }
-            else if (colorChoice == 3) {
-                graphics.fillStyle = "blue";
+            else if (toolChoice == 3) {
+                // TOOL 3: Concentric circles -- uses the drag's starting
+                // point plus the current point, so the circle grows/shrinks
+                // in place as you drag away from or back toward startX,startY.
+                var dx = x - startX;
+                var dy = y - startY;
+                var radius = Math.sqrt(dx*dx + dy*dy);
+                graphics.lineWidth = 2;
+                graphics.strokeCircle(startX, startY, radius);
             }
-            graphics.fillRect(x-20,y-20,40,40);
-            graphics.strokeRect(x-20,y-20,40,40);
-            
+            else if (toolChoice == 4) {
+                // TOOL 4: Eraser -- always paints white, regardless of the
+                // selected color, "removing" whatever was drawn underneath.
+                graphics.fillStyle = "white";
+                graphics.fillRect(x-15, y-15, 30, 30);
+            }
+ 
             /*------------------------------------------------------------*/
             
             prevX = x;  // update prevX,prevY to prepare for next call to doMouseMove
@@ -132,7 +210,7 @@
             }
             dragging = false;
             document.removeEventListener("mousemove", doMouseMove, false);
-            document.removeEventListener("mouseup", doMouseMove, false);
+            document.removeEventListener("mouseup", doMouseUp, false);
          }
          
          canvas.addEventListener("mousedown", doMouseDown, false);
@@ -250,7 +328,7 @@
 </head>
 <body onload="init()"> <!-- the onload attribute here is what calls the init() function -->
 
-<h2>Lab 2, Exercise 2: Mousing</h2>
+<h2>Lab 1, Exercise 3: Canvas Graphics</h2>
 
 <noscript>
     <!-- This message will be shown in the page if JavaScript is not available. -->
@@ -263,7 +341,19 @@
         <option value="1">Red</option>
         <option value="2">Green</option>
         <option value="3">Blue</option>
+        <option value="4">Purple</option>
     </select>
+ 
+    <b>Tool:</b>
+    <select id="toolChoice">
+        <option value="0">Square</option>
+        <option value="1">Star</option>
+        <option value="2">Curve</option>
+        <option value="3">Concentric Circles</option>
+        <option value="4">Eraser</option>
+    </select>
+ 
+    <button id="clearButton" onclick="doClear()">Clear</button>
 </p>
 
 <div id="canvasholder">

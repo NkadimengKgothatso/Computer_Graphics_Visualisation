@@ -31,7 +31,7 @@ This course covers the fundamentals of computer graphics and visualization, incl
 | 3 | Lab 3 |
 | 4 | Lab 4 |
 
-## 🚀 Projects
+## 🚀 Projects(https://github.com/motshekhene/cgv-project)
 
 | Name | Description | Weight |
 |------|-------------|--------|

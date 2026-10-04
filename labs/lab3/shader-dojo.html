@@ -1,0 +1,1830 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Shader Dojo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+
+/* Layout: lesson rail | code editor | live GPU preview, like a lab bench with the notes on the left */
+:root{
+  --bg:#eef0f3; --panel:#ffffff; --sunk:#e3e6eb; --line:#cfd4dc;
+  --fg:#1b2230; --muted:#5a6475; --accent:#c8641e; --accent-ink:#ffffff;
+  --teal:#11807a; --good:#1f8a4c; --bad:#c23a32; --code-bg:#f7f8fa; --code-fg:#1b2230;
+  --font-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-code:"JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#12151b; --panel:#1a1e26; --sunk:#232833; --line:#2f3644;
+  --fg:#e6e9ef; --muted:#9aa4b5; --accent:#e8873f; --accent-ink:#1a1206;
+  --teal:#3bb8af; --good:#4cc47e; --bad:#ef6a60; --code-bg:#0f1217; --code-fg:#dfe5ee; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#12151b; --panel:#1a1e26; --sunk:#232833; --line:#2f3644;
+  --fg:#e6e9ef; --muted:#9aa4b5; --accent:#e8873f; --accent-ink:#1a1206;
+  --teal:#3bb8af; --good:#4cc47e; --bad:#ef6a60; --code-bg:#0f1217; --code-fg:#dfe5ee; color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.55}
+*{box-sizing:border-box}
+button{font:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr) minmax(0,1fr);gap:12px;height:100%;padding:12px 16px}
+.col{min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-height:0}
+
+/* Lesson rail */
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 2px}
+.brand h1{font-family:var(--font-display);font-weight:800;font-size:24px;margin:0;letter-spacing:-.01em}
+.brand .sub{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.progress{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.bar{flex:1;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--good);width:0;transition:width .3s}
+.progress span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.picker{display:flex;gap:6px;padding:0 12px 10px}
+.picker select{flex:1;min-width:0;padding:7px 8px;border-radius:7px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);font:inherit;font-size:14px}
+.picker button{padding:6px 10px;border-radius:7px;border:1px solid var(--line);background:var(--sunk);color:var(--fg)}
+.lesson{flex:1;overflow:auto;padding:4px 16px 16px}
+.lesson .kicker{font-family:var(--font-code);font-size:11px;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;margin-top:6px}
+.lesson h2{font-family:var(--font-display);font-weight:600;font-size:22px;line-height:1.2;margin:2px 0 10px;text-wrap:balance}
+.lesson h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 6px}
+.lesson p{margin:0 0 10px;max-width:65ch}
+.lesson ul{margin:0 0 10px;padding-left:20px}
+.lesson code{font-family:var(--font-code);font-size:12.5px;background:var(--sunk);padding:1px 5px;border-radius:4px}
+.lesson pre{font-family:var(--font-code);font-size:12.5px;background:var(--code-bg);color:var(--code-fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:0 0 10px;line-height:1.5}
+.lesson pre code{background:none;padding:0}
+.task{border:1px solid var(--accent);border-radius:8px;padding:10px 12px;background:color-mix(in srgb,var(--accent) 8%,var(--panel))}
+.task b.lbl{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.task p:last-child{margin-bottom:0}
+.tip{font-size:13.5px;color:var(--muted);border-left:3px solid var(--teal);padding:2px 0 2px 10px;margin:10px 0}
+.hintbox{display:flex;flex-direction:column;gap:6px}
+.hint{font-size:14px;background:var(--sunk);border-radius:7px;padding:8px 10px}
+.btnrow{display:flex;flex-wrap:wrap;gap:6px}
+.btn{padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);font-size:13.5px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.ghost{background:transparent}
+
+/* Editor */
+.edhead{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{padding:5px 12px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);font-family:var(--font-code);font-size:12.5px}
+.tab[aria-selected="true"]{background:var(--sunk);border-color:var(--line);color:var(--fg)}
+.tab .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;background:var(--line);vertical-align:middle}
+.tab.edit .dot{background:var(--accent)}
+.edhead .spacer{flex:1}
+.status{font-family:var(--font-code);font-size:12px;padding:3px 9px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.status.ok{color:var(--good)} .status.err{color:var(--bad)}
+.editor{flex:1;min-height:0;display:flex;background:var(--code-bg);border-radius:0 0 10px 10px;overflow:hidden}
+.gutter{font-family:var(--font-code);font-size:13px;line-height:20px;padding:10px 8px 10px 10px;color:var(--muted);text-align:right;user-select:none;overflow:hidden;min-width:44px;opacity:.75;white-space:pre}
+.gutter .e{color:var(--bad);font-weight:600;opacity:1}
+textarea.code{flex:1;min-width:0;border:0;resize:none;background:transparent;color:var(--code-fg);font-family:var(--font-code);font-size:13px;line-height:20px;padding:10px 12px 10px 4px;tab-size:2;white-space:pre;overflow:auto;outline:none}
+.errors{font-family:var(--font-code);font-size:12px;color:var(--bad);padding:8px 12px;border-top:1px solid var(--line);max-height:110px;overflow:auto;white-space:pre-wrap}
+
+/* Preview */
+.view{flex:1;min-height:0;position:relative;overflow:hidden;border-radius:10px}
+canvas#gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab;background:var(--sunk)}
+.ovl{position:absolute;font-family:var(--font-code);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#e9edf3;background:rgba(10,12,16,.6);padding:3px 8px;border-radius:5px;pointer-events:none}
+.ovl.you{left:10px;top:10px} .ovl.tgt{right:10px;bottom:calc(var(--inset) + 14px)}
+.vctrl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px}
+.vctrl label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.vctrl select{padding:5px 6px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);font:inherit;font-size:13px}
+.clock{font-family:var(--font-code);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;margin-left:auto}
+.result{padding:10px 12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.score{font-family:var(--font-display);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums;min-width:72px}
+.result .msg{font-size:14px;flex:1;min-width:160px}
+.pass{color:var(--good)} .fail{color:var(--bad)}
+.sol pre{max-height:240px}
+
+@media (max-width:1150px){
+  .app{grid-template-columns:minmax(0,1fr) minmax(0,1fr);height:auto}
+  .col.rail{grid-column:1 / -1}
+  .lesson{max-height:none}
+  .col.ed .panel.edp{height:560px} .col.pv .view{height:420px;flex:none}
+}
+@media (max-width:760px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .col.ed .panel.edp{height:460px} .col.pv .view{height:340px}
+}
+@media (prefers-reduced-motion:reduce){ .bar i{transition:none} }
+
+[hidden]{display:none!important}
+
+.picker select optgroup{font-weight:600}
+.trackchip{display:inline-block;font-family:var(--font-code);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--teal);margin-right:6px}
+iframe.labframe{display:block;width:100%;height:100%;border:0;background:#000}
+.thumb{position:absolute;right:10px;bottom:10px;width:34%;max-width:200px;aspect-ratio:1;border:2px solid var(--accent);border-radius:4px;background:#000}
+.thumb[hidden]{display:none!important}
+.offstage{position:absolute;left:-10000px;top:0;width:620px;height:900px;border:0}
+.runbtn{padding:5px 12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-size:12.5px;font-weight:600}
+.runbtn[hidden]{display:none!important}
+.lesson table{border-collapse:collapse;font-size:13px;margin:0 0 10px;width:100%}
+.lesson th,.lesson td{border:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+.lesson th{background:var(--sunk);font-weight:600}
+.tablewrap{overflow-x:auto}
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <section class="col rail">
+    <div class="brand"><h1>Shader Dojo</h1><span class="sub">CGV Lab 3 · WebGL + GLSL</span></div>
+    <div class="panel" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="progress"><div class="bar"><i id="bar"></i></div><span id="progtxt">0 / 0 passed</span></div>
+      <div class="picker">
+        <button id="prev" aria-label="Previous lesson">‹</button>
+        <select id="lessonSel" aria-label="Choose lesson"></select>
+        <button id="next" aria-label="Next lesson">›</button>
+      </div>
+      <article class="lesson" id="lesson"></article>
+    </div>
+  </section>
+
+  <section class="col ed">
+    <div class="panel edp" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="edhead" role="tablist" id="tabs">
+        <span class="spacer"></span>
+        <button class="runbtn" id="runBtn" hidden>Run ▸</button>
+        <span class="status" id="status">loading…</span>
+      </div>
+      <div class="editor">
+        <div class="gutter" id="gutter"></div>
+        <textarea class="code" id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code editor"></textarea>
+      </div>
+      <div class="errors" id="errors" hidden></div>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="resetBtn">Reset this lesson's code</button>
+      <button class="btn ghost" id="copyBtn">Copy code</button>
+    </div>
+  </section>
+
+  <section class="col pv">
+    <div class="panel view" style="--inset:0px" id="viewWrap">
+      <canvas id="gl" aria-label="Live render of your shader"></canvas>
+      <iframe class="labframe" id="labFrame" title="Your lab page, running" hidden></iframe>
+      <canvas class="thumb" id="thumb" width="200" height="200" hidden></canvas>
+      <span class="ovl you" id="youLbl">Your shader</span>
+      <span class="ovl tgt" id="tgtLbl">Target</span>
+    </div>
+    <div class="panel vctrl" id="gymCtrl">
+      <label>Model <select id="meshSel"><option value="sphere">Sphere</option><option value="torus">Torus</option><option value="knot">Torus knot</option><option value="cube">Rounded cube</option></select></label>
+      <button class="btn" id="spinBtn">Pause spin</button>
+      <button class="btn" id="timeBtn">Pause time</button>
+      <button class="btn" id="tgtBtn">Hide target</button>
+      <span class="clock" id="clock">time = 0.00</span>
+    </div>
+    <div class="panel vctrl" id="labCtrl" hidden>
+      <button class="btn" id="reloadBtn">Restart preview</button>
+      <button class="btn" id="tgtBtn2">Hide target</button>
+      <span class="clock" id="labNote">The orange box is the target.</span>
+    </div>
+    <div class="panel result">
+      <button class="btn primary" id="checkBtn">Check my answer</button>
+      <span class="score" id="score">–</span>
+      <span class="msg" id="msg"></span>
+    </div>
+  </section>
+</div>
+<iframe class="offstage" id="tgtFrame" title="Target render" aria-hidden="true" tabindex="-1"></iframe>
+
+<script type="text/plain" id="code-s31">
+        //@S shaders
+        const vertexShaderSource = `
+            attribute vec3 a_position;
+            uniform mat4 u_modelView;
+            uniform mat4 u_projection;
+
+            void main() {
+                gl_Position = u_projection * u_modelView * vec4(a_position, 1.0);
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision mediump float;
+
+            void main() {
+                gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            }
+        `;
+        //@E
+
+        const canvas = document.getElementById('webgl-canvas');
+        const gl = canvas.getContext('webgl');
+
+        if (!gl) {
+            console.error('WebGL not supported, falling back on experimental-webgl');
+            gl = canvas.getContext('experimental-webgl');
+        }
+
+        if (!gl) {
+            alert('Your browser does not support WebGL');
+        }
+
+        // Define the vertices for a cube
+        const vertices = new Float32Array([
+            -1, -1, -1,
+             1, -1, -1,
+            -1,  1, -1,
+             1,  1, -1,
+            -1, -1,  1,
+             1, -1,  1,
+            -1,  1,  1,
+             1,  1,  1,
+        ]);
+
+        // Define indices to form triangles
+        const indices = new Uint16Array([
+            0, 1, 2, 1, 2, 3, // Front face
+            4, 5, 6, 5, 6, 7, // Back face
+            0, 1, 4, 1, 4, 5, // Bottom face
+            2, 3, 6, 3, 6, 7, // Top face
+            0, 2, 4, 2, 4, 6, // Left face
+            1, 3, 5, 3, 5, 7  // Right face
+        ]);
+
+        const colors = new Float32Array([
+        // RGB color values for each vertex
+            1, 0, 0, // Red
+            0, 1, 0, // Green
+            0, 0, 1, // Blue
+            1, 1, 0, // Yellow
+            0, 1, 1, // Cyan
+            1, 0, 1, // Magenta
+            0.5, 0.5, 0.5, // Gray
+            1, 0.5, 0.5, // Light Red
+        ]);
+
+        // Enable depth testing
+        gl.enable(gl.DEPTH_TEST);
+
+        // Create buffer for vertices and indices
+        //@S buffers|make vertexBuffer and indexBuffer: createBuffer, bindBuffer, bufferData
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+        //@E
+
+        // Create buffer for colours
+
+
+        // Define transformation matrices
+        //@S matrices|make modelViewMatrix and projectionMatrix with mat4.create()
+        const modelViewMatrix = mat4.create();
+        const projectionMatrix = mat4.create();
+        mat4.identity(modelViewMatrix);
+        //@E
+
+        // Define shader program
+        const shaderProgram = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+        // Get attribute and uniform locations
+        //@S locations|positionLoc for a_position, modelViewLoc for u_modelView, projectionLoc for u_projection
+        const positionLoc = gl.getAttribLocation(shaderProgram, 'a_position');
+        const modelViewLoc = gl.getUniformLocation(shaderProgram, 'u_modelView');
+        const projectionLoc = gl.getUniformLocation(shaderProgram, 'u_projection');
+        //@E
+
+        // Set up the WebGL context
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(shaderProgram);
+
+        // Bind postion buffer
+        //@S bindpos|bind vertexBuffer, describe it with vertexAttribPointer, enable positionLoc
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(positionLoc);
+        //@E
+
+        // Bind color buffer
+
+
+        // Set up the perspective projection matrix
+        //@S proj|mat4.perspective (fov Math.PI / 4, aspect, 0.1, 100.0), then uniformMatrix4fv
+        const fov = Math.PI / 4;  // 45 degrees
+        const aspect = canvas.width / canvas.height;
+        const near = 0.1;
+        const far = 100.0;
+        mat4.perspective(projectionMatrix, fov, aspect, near, far);
+        gl.uniformMatrix4fv(projectionLoc, false, projectionMatrix);
+        //@E
+
+        // Set up the modelview matrix
+        //@S modelview|push the cube 5 units away with mat4.translate, then uniformMatrix4fv
+        mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -5]);
+        gl.uniformMatrix4fv(modelViewLoc, false, modelViewMatrix);
+        //@E
+
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        // Draw the cube
+        //@S draw|bind indexBuffer, then drawElements
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+        //@E
+
+        function createProgram(gl, vertexShaderSource, fragmentShaderSource) {
+            let  vsh = gl.createShader( gl.VERTEX_SHADER );
+            gl.shaderSource( vsh, vertexShaderSource );
+            gl.compileShader( vsh );
+            if ( ! gl.getShaderParameter(vsh, gl.COMPILE_STATUS) ) {
+                throw new Error("Error in vertex shader:  " + gl.getShaderInfoLog(vsh));
+            }
+            let  fsh = gl.createShader( gl.FRAGMENT_SHADER );
+            gl.shaderSource( fsh, fragmentShaderSource );
+            gl.compileShader( fsh );
+            if ( ! gl.getShaderParameter(fsh, gl.COMPILE_STATUS) ) {
+                throw new Error("Error in fragment shader:  " + gl.getShaderInfoLog(fsh));
+            }
+            let  prog = gl.createProgram();
+            gl.attachShader( prog, vsh );
+            gl.attachShader( prog, fsh );
+            gl.linkProgram( prog );
+            if ( ! gl.getProgramParameter( prog, gl.LINK_STATUS) ) {
+                throw new Error("Link error in program:  " + gl.getProgramInfoLog(prog));
+            }
+            return prog;
+        }
+
+        function compileShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+</script>
+
+<script type="text/plain" id="code-v32-lambert">    attribute vec3 a_coords;
+    attribute vec3 a_normal;
+    uniform mat4 modelview;
+    uniform mat4 projection;
+    uniform mat3 normalMatrix;
+    uniform vec4 lightPosition;
+    uniform vec4 diffuseColor;
+    uniform vec3 specularColor;
+    uniform float specularExponent;
+    varying vec4 v_color;
+    void main() {
+        vec4 coords = vec4(a_coords, 1.0);
+        vec4 eyeCoords = modelview * coords;
+        gl_Position = projection * eyeCoords;
+
+        vec3 N, L, R, V;  // vectors for the lighting equation
+        N = normalize( normalMatrix * a_normal );
+        if ( lightPosition.w == 0.0 ) {
+            L = normalize( lightPosition.xyz );   // directional light
+        }
+        else {
+            L = normalize( lightPosition.xyz/lightPosition.w - eyeCoords.xyz );  // point light
+        }
+        R = -reflect(L, N);
+        V = normalize( -eyeCoords.xyz );
+        if ( dot(L, N) <= 0.0 ) {
+            v_color = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+        else {
+            vec3 color = 0.8 * dot(L, N) * diffuseColor.rgb;
+            if ( dot(R, V) > 0.0 ) {
+                color += 0.4 * pow(dot(R, V), specularExponent) * specularColor;
+            }
+            v_color = vec4(color, diffuseColor.a);
+        }
+    }</script>
+
+<script type="text/plain" id="code-f32-lambert">#ifdef GL_FRAGMENT_PRECISION_HIGH
+       precision highp float;
+    #else
+       precision mediump float;
+    #endif
+    varying vec4 v_color;
+
+    // Additional uniforms for cell shading
+    uniform float cellSize;
+
+    void main() {
+        gl_FragColor = v_color;
+    }</script>
+
+<script type="text/plain" id="code-f32-cell">#ifdef GL_FRAGMENT_PRECISION_HIGH
+       precision highp float;
+    #else
+       precision mediump float;
+    #endif
+    varying vec4 v_color;
+
+    // Additional uniforms for cell shading
+    uniform float cellSize;
+
+    void main() {
+
+        // Quantize the light intensity based on the cell size
+        vec3 shaded = floor(v_color.rgb * cellSize) / cellSize;
+        gl_FragColor = vec4(shaded, v_color.a);
+    }</script>
+
+<script type="text/plain" id="code-v32-phong">    attribute vec3 a_coords;
+    attribute vec3 a_normal;
+    uniform mat4 modelview;
+    uniform mat4 projection;
+    varying vec3 v_normal;
+    varying vec3 v_eyeCoords;
+    void main() {
+        vec4 eyeCoords = modelview * vec4(a_coords, 1.0);
+        gl_Position = projection * eyeCoords;
+        v_normal = normalize(a_normal);
+        v_eyeCoords = eyeCoords.xyz / eyeCoords.w;
+    }</script>
+
+<script type="text/plain" id="code-f32-phong">#ifdef GL_FRAGMENT_PRECISION_HIGH
+       precision highp float;
+    #else
+       precision mediump float;
+    #endif
+    varying vec3 v_normal;
+    varying vec3 v_eyeCoords;
+    uniform mat3 normalMatrix;
+    uniform vec4 lightPosition;
+    uniform vec4 diffuseColor;
+    uniform vec3 specularColor;
+    uniform float specularExponent;
+    uniform float cellSize;
+
+    void main() {
+        vec3 N, L, R, V;
+        N = normalize( normalMatrix * v_normal );
+        if ( lightPosition.w == 0.0 ) {
+            L = normalize( lightPosition.xyz );
+        }
+        else {
+            L = normalize( lightPosition.xyz/lightPosition.w - v_eyeCoords );
+        }
+        R = -reflect(L, N);
+        V = normalize( -v_eyeCoords );
+        vec4 color4;
+        if ( dot(L, N) <= 0.0 ) {
+            color4 = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+        else {
+            vec3 color = 0.8 * dot(L, N) * diffuseColor.rgb;
+            if ( dot(R, V) > 0.0 ) {
+                color += 0.4 * pow(dot(R, V), specularExponent) * specularColor;
+            }
+            color4 = vec4(color, diffuseColor.a);
+        }
+        gl_FragColor = color4;
+    }</script>
+
+<script type="text/plain" id="code-s31c">
+        const vertexShaderSource = `
+            attribute vec3 a_position;
+            attribute vec3 a_color;
+            uniform mat4 u_modelView;
+            uniform mat4 u_projection;
+            varying vec3 v_color;
+
+            void main() {
+                v_color = a_color;
+                gl_Position = u_projection * u_modelView * vec4(a_position, 1.0);
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision mediump float;
+            varying vec3 v_color;
+
+            void main() {
+                gl_FragColor = vec4(v_color, 1.0);
+            }
+        `;
+
+        const canvas = document.getElementById('webgl-canvas');
+        const gl = canvas.getContext('webgl');
+
+        if (!gl) {
+            console.error('WebGL not supported, falling back on experimental-webgl');
+            gl = canvas.getContext('experimental-webgl');
+        }
+
+        if (!gl) {
+            alert('Your browser does not support WebGL');
+        }
+
+        // Define the vertices for a cube
+        const vertices = new Float32Array([
+            -1, -1, -1,
+             1, -1, -1,
+            -1,  1, -1,
+             1,  1, -1,
+            -1, -1,  1,
+             1, -1,  1,
+            -1,  1,  1,
+             1,  1,  1,
+        ]);
+
+        // Define indices to form triangles
+        const indices = new Uint16Array([
+            0, 1, 2, 1, 2, 3, // Front face
+            4, 5, 6, 5, 6, 7, // Back face
+            0, 1, 4, 1, 4, 5, // Bottom face
+            2, 3, 6, 3, 6, 7, // Top face
+            0, 2, 4, 2, 4, 6, // Left face
+            1, 3, 5, 3, 5, 7  // Right face
+        ]);
+
+        const colors = new Float32Array([
+        // RGB color values for each vertex
+            1, 0, 0, // Red
+            0, 1, 0, // Green
+            0, 0, 1, // Blue
+            1, 1, 0, // Yellow
+            0, 1, 1, // Cyan
+            1, 0, 1, // Magenta
+            0.5, 0.5, 0.5, // Gray
+            1, 0.5, 0.5, // Light Red
+        ]);
+
+        // Enable depth testing
+        gl.enable(gl.DEPTH_TEST);
+
+        // Create buffer for vertices and indices
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+        // Create buffer for colours
+        const colorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+
+        // Define transformation matrices
+        const modelViewMatrix = mat4.create();
+        const projectionMatrix = mat4.create();
+        mat4.identity(modelViewMatrix);
+
+        // Define shader program
+        const shaderProgram = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+        // Get attribute and uniform locations
+        const positionLoc = gl.getAttribLocation(shaderProgram, 'a_position');
+        const modelViewLoc = gl.getUniformLocation(shaderProgram, 'u_modelView');
+        const projectionLoc = gl.getUniformLocation(shaderProgram, 'u_projection');
+        const colorLoc = gl.getAttribLocation(shaderProgram, 'a_color');
+
+        // Set up the WebGL context
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(shaderProgram);
+
+        // Bind postion buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(positionLoc);
+
+        // Bind color buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.vertexAttribPointer(colorLoc, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(colorLoc);
+
+        // Set up the perspective projection matrix
+        const fov = Math.PI / 4;  // 45 degrees
+        const aspect = canvas.width / canvas.height;
+        const near = 0.1;
+        const far = 100.0;
+        mat4.perspective(projectionMatrix, fov, aspect, near, far);
+        gl.uniformMatrix4fv(projectionLoc, false, projectionMatrix);
+
+        // Set up the modelview matrix
+        mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -5]);
+        mat4.rotateX(modelViewMatrix, modelViewMatrix, 0.6);
+        mat4.rotateY(modelViewMatrix, modelViewMatrix, 0.8);
+        gl.uniformMatrix4fv(modelViewLoc, false, modelViewMatrix);
+
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        // Draw the cube
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+
+        function createProgram(gl, vertexShaderSource, fragmentShaderSource) {
+            let  vsh = gl.createShader( gl.VERTEX_SHADER );
+            gl.shaderSource( vsh, vertexShaderSource );
+            gl.compileShader( vsh );
+            if ( ! gl.getShaderParameter(vsh, gl.COMPILE_STATUS) ) {
+                throw new Error("Error in vertex shader:  " + gl.getShaderInfoLog(vsh));
+            }
+            let  fsh = gl.createShader( gl.FRAGMENT_SHADER );
+            gl.shaderSource( fsh, fragmentShaderSource );
+            gl.compileShader( fsh );
+            if ( ! gl.getShaderParameter(fsh, gl.COMPILE_STATUS) ) {
+                throw new Error("Error in fragment shader:  " + gl.getShaderInfoLog(fsh));
+            }
+            let  prog = gl.createProgram();
+            gl.attachShader( prog, vsh );
+            gl.attachShader( prog, fsh );
+            gl.linkProgram( prog );
+            if ( ! gl.getProgramParameter( prog, gl.LINK_STATUS) ) {
+                throw new Error("Link error in program:  " + gl.getProgramInfoLog(prog));
+            }
+            return prog;
+        }
+
+        function compileShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+</script>
+<script type="text/plain" id="code-s31m">
+        const vertexShaderSource = `
+            attribute vec3 a_position;
+            attribute vec3 a_color;
+            uniform mat4 u_modelView;
+            uniform mat4 u_projection;
+            varying vec3 v_color;
+
+            void main() {
+                v_color = a_color;
+                gl_Position = u_projection * u_modelView * vec4(a_position, 1.0);
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision mediump float;
+            varying vec3 v_color;
+
+            void main() {
+                gl_FragColor = vec4(v_color, 1.0);
+            }
+        `;
+
+        const canvas = document.getElementById('webgl-canvas');
+        const gl = canvas.getContext('webgl');
+
+        if (!gl) {
+            console.error('WebGL not supported, falling back on experimental-webgl');
+            gl = canvas.getContext('experimental-webgl');
+        }
+
+        if (!gl) {
+            alert('Your browser does not support WebGL');
+        }
+
+        // Define the vertices for a cube
+        const vertices = new Float32Array([
+            -1, -1, -1,
+             1, -1, -1,
+            -1,  1, -1,
+             1,  1, -1,
+            -1, -1,  1,
+             1, -1,  1,
+            -1,  1,  1,
+             1,  1,  1,
+        ]);
+
+        // Define indices to form triangles
+        const indices = new Uint16Array([
+            0, 1, 2, 1, 2, 3, // Front face
+            4, 5, 6, 5, 6, 7, // Back face
+            0, 1, 4, 1, 4, 5, // Bottom face
+            2, 3, 6, 3, 6, 7, // Top face
+            0, 2, 4, 2, 4, 6, // Left face
+            1, 3, 5, 3, 5, 7  // Right face
+        ]);
+
+        const colors = new Float32Array([
+        // RGB color values for each vertex
+            1, 0, 0, // Red
+            0, 1, 0, // Green
+            0, 0, 1, // Blue
+            1, 1, 0, // Yellow
+            0, 1, 1, // Cyan
+            1, 0, 1, // Magenta
+            0.5, 0.5, 0.5, // Gray
+            1, 0.5, 0.5, // Light Red
+        ]);
+
+        // Enable depth testing
+        gl.enable(gl.DEPTH_TEST);
+
+        // Create buffer for vertices and indices
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+        // Create buffer for colours
+        const colorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+
+        // Define transformation matrices
+        const modelViewMatrix = mat4.create();
+        const projectionMatrix = mat4.create();
+        mat4.identity(modelViewMatrix);
+
+        // Define shader program
+        const shaderProgram = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+        // Get attribute and uniform locations
+        const positionLoc = gl.getAttribLocation(shaderProgram, 'a_position');
+        const modelViewLoc = gl.getUniformLocation(shaderProgram, 'u_modelView');
+        const projectionLoc = gl.getUniformLocation(shaderProgram, 'u_projection');
+        const colorLoc = gl.getAttribLocation(shaderProgram, 'a_color');
+
+        // Set up the WebGL context
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(shaderProgram);
+
+        // Bind postion buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(positionLoc);
+
+        // Bind color buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.vertexAttribPointer(colorLoc, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(colorLoc);
+
+        // Set up the perspective projection matrix
+        const fov = Math.PI / 4;  // 45 degrees
+        const aspect = canvas.width / canvas.height;
+        const near = 0.1;
+        const far = 100.0;
+        mat4.perspective(projectionMatrix, fov, aspect, near, far);
+        gl.uniformMatrix4fv(projectionLoc, false, projectionMatrix);
+
+        // Set up the modelview matrix and draw, every frame
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        let angle = 0;
+
+        function render() {
+            angle += 0.01;
+            mat4.identity(modelViewMatrix);
+            mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -5]);
+            mat4.rotate(modelViewMatrix, modelViewMatrix, angle, [1, 1, 0]);
+            gl.uniformMatrix4fv(modelViewLoc, false, modelViewMatrix);
+
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+            requestAnimationFrame(render);
+        }
+        render();
+
+        function createProgram(gl, vertexShaderSource, fragmentShaderSource) {
+            let  vsh = gl.createShader( gl.VERTEX_SHADER );
+            gl.shaderSource( vsh, vertexShaderSource );
+            gl.compileShader( vsh );
+            if ( ! gl.getShaderParameter(vsh, gl.COMPILE_STATUS) ) {
+                throw new Error("Error in vertex shader:  " + gl.getShaderInfoLog(vsh));
+            }
+            let  fsh = gl.createShader( gl.FRAGMENT_SHADER );
+            gl.shaderSource( fsh, fragmentShaderSource );
+            gl.compileShader( fsh );
+            if ( ! gl.getShaderParameter(fsh, gl.COMPILE_STATUS) ) {
+                throw new Error("Error in fragment shader:  " + gl.getShaderInfoLog(fsh));
+            }
+            let  prog = gl.createProgram();
+            gl.attachShader( prog, vsh );
+            gl.attachShader( prog, fsh );
+            gl.linkProgram( prog );
+            if ( ! gl.getProgramParameter( prog, gl.LINK_STATUS) ) {
+                throw new Error("Link error in program:  " + gl.getProgramInfoLog(prog));
+            }
+            return prog;
+        }
+
+        function compileShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+</script>
+
+
+<script>
+const RES = {"glm": "/**\n * @fileoverview gl-matrix - High performance matrix and vector operations\n * @author Brandon Jones\n * @author Colin MacKenzie IV\n * @version 2.3.0\n */\n\n/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE. */\n\n!function(t,n){if(\"object\"==typeof exports&&\"object\"==typeof module)module.exports=n();else if(\"function\"==typeof define&&define.amd)define(n);else{var r=n();for(var a in r)(\"object\"==typeof exports?exports:t)[a]=r[a]}}(this,function(){return function(t){function n(a){if(r[a])return r[a].exports;var e=r[a]={exports:{},id:a,loaded:!1};return t[a].call(e.exports,e,e.exports,n),e.loaded=!0,e.exports}var r={};return n.m=t,n.c=r,n.p=\"\",n(0)}([function(t,n,r){n.glMatrix=r(1),n.mat2=r(2),n.mat2d=r(3),n.mat3=r(4),n.mat4=r(5),n.quat=r(6),n.vec2=r(9),n.vec3=r(7),n.vec4=r(8)},function(t,n){var r={};r.EPSILON=1e-6,r.ARRAY_TYPE=\"undefined\"!=typeof Float32Array?Float32Array:Array,r.RANDOM=Math.random,r.setMatrixArrayType=function(t){GLMAT_ARRAY_TYPE=t};var a=Math.PI/180;r.toRadian=function(t){return t*a},t.exports=r},function(t,n,r){var a=r(1),e={};e.create=function(){var t=new a.ARRAY_TYPE(4);return t[0]=1,t[1]=0,t[2]=0,t[3]=1,t},e.clone=function(t){var n=new a.ARRAY_TYPE(4);return n[0]=t[0],n[1]=t[1],n[2]=t[2],n[3]=t[3],n},e.copy=function(t,n){return t[0]=n[0],t[1]=n[1],t[2]=n[2],t[3]=n[3],t},e.identity=function(t){return t[0]=1,t[1]=0,t[2]=0,t[3]=1,t},e.transpose=function(t,n){if(t===n){var r=n[1];t[1]=n[2],t[2]=r}else t[0]=n[0],t[1]=n[2],t[2]=n[1],t[3]=n[3];return t},e.invert=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=r*u-e*a;return o?(o=1/o,t[0]=u*o,t[1]=-a*o,t[2]=-e*o,t[3]=r*o,t):null},e.adjoint=function(t,n){var r=n[0];return t[0]=n[3],t[1]=-n[1],t[2]=-n[2],t[3]=r,t},e.determinant=function(t){return t[0]*t[3]-t[2]*t[1]},e.multiply=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=r[0],c=r[1],f=r[2],s=r[3];return t[0]=a*i+u*c,t[1]=e*i+o*c,t[2]=a*f+u*s,t[3]=e*f+o*s,t},e.mul=e.multiply,e.rotate=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=Math.sin(r),c=Math.cos(r);return t[0]=a*c+u*i,t[1]=e*c+o*i,t[2]=a*-i+u*c,t[3]=e*-i+o*c,t},e.scale=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=r[0],c=r[1];return t[0]=a*i,t[1]=e*i,t[2]=u*c,t[3]=o*c,t},e.fromRotation=function(t,n){var r=Math.sin(n),a=Math.cos(n);return t[0]=a,t[1]=r,t[2]=-r,t[3]=a,t},e.fromScaling=function(t,n){return t[0]=n[0],t[1]=0,t[2]=0,t[3]=n[1],t},e.str=function(t){return\"mat2(\"+t[0]+\", \"+t[1]+\", \"+t[2]+\", \"+t[3]+\")\"},e.frob=function(t){return Math.sqrt(Math.pow(t[0],2)+Math.pow(t[1],2)+Math.pow(t[2],2)+Math.pow(t[3],2))},e.LDU=function(t,n,r,a){return t[2]=a[2]/a[0],r[0]=a[0],r[1]=a[1],r[3]=a[3]-t[2]*r[1],[t,n,r]},t.exports=e},function(t,n,r){var a=r(1),e={};e.create=function(){var t=new a.ARRAY_TYPE(6);return t[0]=1,t[1]=0,t[2]=0,t[3]=1,t[4]=0,t[5]=0,t},e.clone=function(t){var n=new a.ARRAY_TYPE(6);return n[0]=t[0],n[1]=t[1],n[2]=t[2],n[3]=t[3],n[4]=t[4],n[5]=t[5],n},e.copy=function(t,n){return t[0]=n[0],t[1]=n[1],t[2]=n[2],t[3]=n[3],t[4]=n[4],t[5]=n[5],t},e.identity=function(t){return t[0]=1,t[1]=0,t[2]=0,t[3]=1,t[4]=0,t[5]=0,t},e.invert=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=n[4],i=n[5],c=r*u-a*e;return c?(c=1/c,t[0]=u*c,t[1]=-a*c,t[2]=-e*c,t[3]=r*c,t[4]=(e*i-u*o)*c,t[5]=(a*o-r*i)*c,t):null},e.determinant=function(t){return t[0]*t[3]-t[1]*t[2]},e.multiply=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=n[4],c=n[5],f=r[0],s=r[1],h=r[2],M=r[3],l=r[4],v=r[5];return t[0]=a*f+u*s,t[1]=e*f+o*s,t[2]=a*h+u*M,t[3]=e*h+o*M,t[4]=a*l+u*v+i,t[5]=e*l+o*v+c,t},e.mul=e.multiply,e.rotate=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=n[4],c=n[5],f=Math.sin(r),s=Math.cos(r);return t[0]=a*s+u*f,t[1]=e*s+o*f,t[2]=a*-f+u*s,t[3]=e*-f+o*s,t[4]=i,t[5]=c,t},e.scale=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=n[4],c=n[5],f=r[0],s=r[1];return t[0]=a*f,t[1]=e*f,t[2]=u*s,t[3]=o*s,t[4]=i,t[5]=c,t},e.translate=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=n[4],c=n[5],f=r[0],s=r[1];return t[0]=a,t[1]=e,t[2]=u,t[3]=o,t[4]=a*f+u*s+i,t[5]=e*f+o*s+c,t},e.fromRotation=function(t,n){var r=Math.sin(n),a=Math.cos(n);return t[0]=a,t[1]=r,t[2]=-r,t[3]=a,t[4]=0,t[5]=0,t},e.fromScaling=function(t,n){return t[0]=n[0],t[1]=0,t[2]=0,t[3]=n[1],t[4]=0,t[5]=0,t},e.fromTranslation=function(t,n){return t[0]=1,t[1]=0,t[2]=0,t[3]=1,t[4]=n[0],t[5]=n[1],t},e.str=function(t){return\"mat2d(\"+t[0]+\", \"+t[1]+\", \"+t[2]+\", \"+t[3]+\", \"+t[4]+\", \"+t[5]+\")\"},e.frob=function(t){return Math.sqrt(Math.pow(t[0],2)+Math.pow(t[1],2)+Math.pow(t[2],2)+Math.pow(t[3],2)+Math.pow(t[4],2)+Math.pow(t[5],2)+1)},t.exports=e},function(t,n,r){var a=r(1),e={};e.create=function(){var t=new a.ARRAY_TYPE(9);return t[0]=1,t[1]=0,t[2]=0,t[3]=0,t[4]=1,t[5]=0,t[6]=0,t[7]=0,t[8]=1,t},e.fromMat4=function(t,n){return t[0]=n[0],t[1]=n[1],t[2]=n[2],t[3]=n[4],t[4]=n[5],t[5]=n[6],t[6]=n[8],t[7]=n[9],t[8]=n[10],t},e.clone=function(t){var n=new a.ARRAY_TYPE(9);return n[0]=t[0],n[1]=t[1],n[2]=t[2],n[3]=t[3],n[4]=t[4],n[5]=t[5],n[6]=t[6],n[7]=t[7],n[8]=t[8],n},e.copy=function(t,n){return t[0]=n[0],t[1]=n[1],t[2]=n[2],t[3]=n[3],t[4]=n[4],t[5]=n[5],t[6]=n[6],t[7]=n[7],t[8]=n[8],t},e.identity=function(t){return t[0]=1,t[1]=0,t[2]=0,t[3]=0,t[4]=1,t[5]=0,t[6]=0,t[7]=0,t[8]=1,t},e.transpose=function(t,n){if(t===n){var r=n[1],a=n[2],e=n[5];t[1]=n[3],t[2]=n[6],t[3]=r,t[5]=n[7],t[6]=a,t[7]=e}else t[0]=n[0],t[1]=n[3],t[2]=n[6],t[3]=n[1],t[4]=n[4],t[5]=n[7],t[6]=n[2],t[7]=n[5],t[8]=n[8];return t},e.invert=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=n[4],i=n[5],c=n[6],f=n[7],s=n[8],h=s*o-i*f,M=-s*u+i*c,l=f*u-o*c,v=r*h+a*M+e*l;return v?(v=1/v,t[0]=h*v,t[1]=(-s*a+e*f)*v,t[2]=(i*a-e*o)*v,t[3]=M*v,t[4]=(s*r-e*c)*v,t[5]=(-i*r+e*u)*v,t[6]=l*v,t[7]=(-f*r+a*c)*v,t[8]=(o*r-a*u)*v,t):null},e.adjoint=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=n[4],i=n[5],c=n[6],f=n[7],s=n[8];return t[0]=o*s-i*f,t[1]=e*f-a*s,t[2]=a*i-e*o,t[3]=i*c-u*s,t[4]=r*s-e*c,t[5]=e*u-r*i,t[6]=u*f-o*c,t[7]=a*c-r*f,t[8]=r*o-a*u,t},e.determinant=function(t){var n=t[0],r=t[1],a=t[2],e=t[3],u=t[4],o=t[5],i=t[6],c=t[7],f=t[8];return n*(f*u-o*c)+r*(-f*e+o*i)+a*(c*e-u*i)},e.multiply=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=n[4],c=n[5],f=n[6],s=n[7],h=n[8],M=r[0],l=r[1],v=r[2],m=r[3],p=r[4],d=r[5],A=r[6],R=r[7],w=r[8];return t[0]=M*a+l*o+v*f,t[1]=M*e+l*i+v*s,t[2]=M*u+l*c+v*h,t[3]=m*a+p*o+d*f,t[4]=m*e+p*i+d*s,t[5]=m*u+p*c+d*h,t[6]=A*a+R*o+w*f,t[7]=A*e+R*i+w*s,t[8]=A*u+R*c+w*h,t},e.mul=e.multiply,e.translate=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=n[4],c=n[5],f=n[6],s=n[7],h=n[8],M=r[0],l=r[1];return t[0]=a,t[1]=e,t[2]=u,t[3]=o,t[4]=i,t[5]=c,t[6]=M*a+l*o+f,t[7]=M*e+l*i+s,t[8]=M*u+l*c+h,t},e.rotate=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=n[4],c=n[5],f=n[6],s=n[7],h=n[8],M=Math.sin(r),l=Math.cos(r);return t[0]=l*a+M*o,t[1]=l*e+M*i,t[2]=l*u+M*c,t[3]=l*o-M*a,t[4]=l*i-M*e,t[5]=l*c-M*u,t[6]=f,t[7]=s,t[8]=h,t},e.scale=function(t,n,r){var a=r[0],e=r[1];return t[0]=a*n[0],t[1]=a*n[1],t[2]=a*n[2],t[3]=e*n[3],t[4]=e*n[4],t[5]=e*n[5],t[6]=n[6],t[7]=n[7],t[8]=n[8],t},e.fromTranslation=function(t,n){return t[0]=1,t[1]=0,t[2]=0,t[3]=0,t[4]=1,t[5]=0,t[6]=n[0],t[7]=n[1],t[8]=1,t},e.fromRotation=function(t,n){var r=Math.sin(n),a=Math.cos(n);return t[0]=a,t[1]=r,t[2]=0,t[3]=-r,t[4]=a,t[5]=0,t[6]=0,t[7]=0,t[8]=1,t},e.fromScaling=function(t,n){return t[0]=n[0],t[1]=0,t[2]=0,t[3]=0,t[4]=n[1],t[5]=0,t[6]=0,t[7]=0,t[8]=1,t},e.fromMat2d=function(t,n){return t[0]=n[0],t[1]=n[1],t[2]=0,t[3]=n[2],t[4]=n[3],t[5]=0,t[6]=n[4],t[7]=n[5],t[8]=1,t},e.fromQuat=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=r+r,i=a+a,c=e+e,f=r*o,s=a*o,h=a*i,M=e*o,l=e*i,v=e*c,m=u*o,p=u*i,d=u*c;return t[0]=1-h-v,t[3]=s-d,t[6]=M+p,t[1]=s+d,t[4]=1-f-v,t[7]=l-m,t[2]=M-p,t[5]=l+m,t[8]=1-f-h,t},e.normalFromMat4=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=n[4],i=n[5],c=n[6],f=n[7],s=n[8],h=n[9],M=n[10],l=n[11],v=n[12],m=n[13],p=n[14],d=n[15],A=r*i-a*o,R=r*c-e*o,w=r*f-u*o,q=a*c-e*i,Y=a*f-u*i,g=e*f-u*c,y=s*m-h*v,x=s*p-M*v,P=s*d-l*v,E=h*p-M*m,T=h*d-l*m,b=M*d-l*p,D=A*b-R*T+w*E+q*P-Y*x+g*y;return D?(D=1/D,t[0]=(i*b-c*T+f*E)*D,t[1]=(c*P-o*b-f*x)*D,t[2]=(o*T-i*P+f*y)*D,t[3]=(e*T-a*b-u*E)*D,t[4]=(r*b-e*P+u*x)*D,t[5]=(a*P-r*T-u*y)*D,t[6]=(m*g-p*Y+d*q)*D,t[7]=(p*w-v*g-d*R)*D,t[8]=(v*Y-m*w+d*A)*D,t):null},e.str=function(t){return\"mat3(\"+t[0]+\", \"+t[1]+\", \"+t[2]+\", \"+t[3]+\", \"+t[4]+\", \"+t[5]+\", \"+t[6]+\", \"+t[7]+\", \"+t[8]+\")\"},e.frob=function(t){return Math.sqrt(Math.pow(t[0],2)+Math.pow(t[1],2)+Math.pow(t[2],2)+Math.pow(t[3],2)+Math.pow(t[4],2)+Math.pow(t[5],2)+Math.pow(t[6],2)+Math.pow(t[7],2)+Math.pow(t[8],2))},t.exports=e},function(t,n,r){var a=r(1),e={};e.create=function(){var t=new a.ARRAY_TYPE(16);return t[0]=1,t[1]=0,t[2]=0,t[3]=0,t[4]=0,t[5]=1,t[6]=0,t[7]=0,t[8]=0,t[9]=0,t[10]=1,t[11]=0,t[12]=0,t[13]=0,t[14]=0,t[15]=1,t},e.clone=function(t){var n=new a.ARRAY_TYPE(16);return n[0]=t[0],n[1]=t[1],n[2]=t[2],n[3]=t[3],n[4]=t[4],n[5]=t[5],n[6]=t[6],n[7]=t[7],n[8]=t[8],n[9]=t[9],n[10]=t[10],n[11]=t[11],n[12]=t[12],n[13]=t[13],n[14]=t[14],n[15]=t[15],n},e.copy=function(t,n){return t[0]=n[0],t[1]=n[1],t[2]=n[2],t[3]=n[3],t[4]=n[4],t[5]=n[5],t[6]=n[6],t[7]=n[7],t[8]=n[8],t[9]=n[9],t[10]=n[10],t[11]=n[11],t[12]=n[12],t[13]=n[13],t[14]=n[14],t[15]=n[15],t},e.identity=function(t){return t[0]=1,t[1]=0,t[2]=0,t[3]=0,t[4]=0,t[5]=1,t[6]=0,t[7]=0,t[8]=0,t[9]=0,t[10]=1,t[11]=0,t[12]=0,t[13]=0,t[14]=0,t[15]=1,t},e.transpose=function(t,n){if(t===n){var r=n[1],a=n[2],e=n[3],u=n[6],o=n[7],i=n[11];t[1]=n[4],t[2]=n[8],t[3]=n[12],t[4]=r,t[6]=n[9],t[7]=n[13],t[8]=a,t[9]=u,t[11]=n[14],t[12]=e,t[13]=o,t[14]=i}else t[0]=n[0],t[1]=n[4],t[2]=n[8],t[3]=n[12],t[4]=n[1],t[5]=n[5],t[6]=n[9],t[7]=n[13],t[8]=n[2],t[9]=n[6],t[10]=n[10],t[11]=n[14],t[12]=n[3],t[13]=n[7],t[14]=n[11],t[15]=n[15];return t},e.invert=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=n[4],i=n[5],c=n[6],f=n[7],s=n[8],h=n[9],M=n[10],l=n[11],v=n[12],m=n[13],p=n[14],d=n[15],A=r*i-a*o,R=r*c-e*o,w=r*f-u*o,q=a*c-e*i,Y=a*f-u*i,g=e*f-u*c,y=s*m-h*v,x=s*p-M*v,P=s*d-l*v,E=h*p-M*m,T=h*d-l*m,b=M*d-l*p,D=A*b-R*T+w*E+q*P-Y*x+g*y;return D?(D=1/D,t[0]=(i*b-c*T+f*E)*D,t[1]=(e*T-a*b-u*E)*D,t[2]=(m*g-p*Y+d*q)*D,t[3]=(M*Y-h*g-l*q)*D,t[4]=(c*P-o*b-f*x)*D,t[5]=(r*b-e*P+u*x)*D,t[6]=(p*w-v*g-d*R)*D,t[7]=(s*g-M*w+l*R)*D,t[8]=(o*T-i*P+f*y)*D,t[9]=(a*P-r*T-u*y)*D,t[10]=(v*Y-m*w+d*A)*D,t[11]=(h*w-s*Y-l*A)*D,t[12]=(i*x-o*E-c*y)*D,t[13]=(r*E-a*x+e*y)*D,t[14]=(m*R-v*q-p*A)*D,t[15]=(s*q-h*R+M*A)*D,t):null},e.adjoint=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=n[4],i=n[5],c=n[6],f=n[7],s=n[8],h=n[9],M=n[10],l=n[11],v=n[12],m=n[13],p=n[14],d=n[15];return t[0]=i*(M*d-l*p)-h*(c*d-f*p)+m*(c*l-f*M),t[1]=-(a*(M*d-l*p)-h*(e*d-u*p)+m*(e*l-u*M)),t[2]=a*(c*d-f*p)-i*(e*d-u*p)+m*(e*f-u*c),t[3]=-(a*(c*l-f*M)-i*(e*l-u*M)+h*(e*f-u*c)),t[4]=-(o*(M*d-l*p)-s*(c*d-f*p)+v*(c*l-f*M)),t[5]=r*(M*d-l*p)-s*(e*d-u*p)+v*(e*l-u*M),t[6]=-(r*(c*d-f*p)-o*(e*d-u*p)+v*(e*f-u*c)),t[7]=r*(c*l-f*M)-o*(e*l-u*M)+s*(e*f-u*c),t[8]=o*(h*d-l*m)-s*(i*d-f*m)+v*(i*l-f*h),t[9]=-(r*(h*d-l*m)-s*(a*d-u*m)+v*(a*l-u*h)),t[10]=r*(i*d-f*m)-o*(a*d-u*m)+v*(a*f-u*i),t[11]=-(r*(i*l-f*h)-o*(a*l-u*h)+s*(a*f-u*i)),t[12]=-(o*(h*p-M*m)-s*(i*p-c*m)+v*(i*M-c*h)),t[13]=r*(h*p-M*m)-s*(a*p-e*m)+v*(a*M-e*h),t[14]=-(r*(i*p-c*m)-o*(a*p-e*m)+v*(a*c-e*i)),t[15]=r*(i*M-c*h)-o*(a*M-e*h)+s*(a*c-e*i),t},e.determinant=function(t){var n=t[0],r=t[1],a=t[2],e=t[3],u=t[4],o=t[5],i=t[6],c=t[7],f=t[8],s=t[9],h=t[10],M=t[11],l=t[12],v=t[13],m=t[14],p=t[15],d=n*o-r*u,A=n*i-a*u,R=n*c-e*u,w=r*i-a*o,q=r*c-e*o,Y=a*c-e*i,g=f*v-s*l,y=f*m-h*l,x=f*p-M*l,P=s*m-h*v,E=s*p-M*v,T=h*p-M*m;return d*T-A*E+R*P+w*x-q*y+Y*g},e.multiply=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=n[4],c=n[5],f=n[6],s=n[7],h=n[8],M=n[9],l=n[10],v=n[11],m=n[12],p=n[13],d=n[14],A=n[15],R=r[0],w=r[1],q=r[2],Y=r[3];return t[0]=R*a+w*i+q*h+Y*m,t[1]=R*e+w*c+q*M+Y*p,t[2]=R*u+w*f+q*l+Y*d,t[3]=R*o+w*s+q*v+Y*A,R=r[4],w=r[5],q=r[6],Y=r[7],t[4]=R*a+w*i+q*h+Y*m,t[5]=R*e+w*c+q*M+Y*p,t[6]=R*u+w*f+q*l+Y*d,t[7]=R*o+w*s+q*v+Y*A,R=r[8],w=r[9],q=r[10],Y=r[11],t[8]=R*a+w*i+q*h+Y*m,t[9]=R*e+w*c+q*M+Y*p,t[10]=R*u+w*f+q*l+Y*d,t[11]=R*o+w*s+q*v+Y*A,R=r[12],w=r[13],q=r[14],Y=r[15],t[12]=R*a+w*i+q*h+Y*m,t[13]=R*e+w*c+q*M+Y*p,t[14]=R*u+w*f+q*l+Y*d,t[15]=R*o+w*s+q*v+Y*A,t},e.mul=e.multiply,e.translate=function(t,n,r){var a,e,u,o,i,c,f,s,h,M,l,v,m=r[0],p=r[1],d=r[2];return n===t?(t[12]=n[0]*m+n[4]*p+n[8]*d+n[12],t[13]=n[1]*m+n[5]*p+n[9]*d+n[13],t[14]=n[2]*m+n[6]*p+n[10]*d+n[14],t[15]=n[3]*m+n[7]*p+n[11]*d+n[15]):(a=n[0],e=n[1],u=n[2],o=n[3],i=n[4],c=n[5],f=n[6],s=n[7],h=n[8],M=n[9],l=n[10],v=n[11],t[0]=a,t[1]=e,t[2]=u,t[3]=o,t[4]=i,t[5]=c,t[6]=f,t[7]=s,t[8]=h,t[9]=M,t[10]=l,t[11]=v,t[12]=a*m+i*p+h*d+n[12],t[13]=e*m+c*p+M*d+n[13],t[14]=u*m+f*p+l*d+n[14],t[15]=o*m+s*p+v*d+n[15]),t},e.scale=function(t,n,r){var a=r[0],e=r[1],u=r[2];return t[0]=n[0]*a,t[1]=n[1]*a,t[2]=n[2]*a,t[3]=n[3]*a,t[4]=n[4]*e,t[5]=n[5]*e,t[6]=n[6]*e,t[7]=n[7]*e,t[8]=n[8]*u,t[9]=n[9]*u,t[10]=n[10]*u,t[11]=n[11]*u,t[12]=n[12],t[13]=n[13],t[14]=n[14],t[15]=n[15],t},e.rotate=function(t,n,r,e){var u,o,i,c,f,s,h,M,l,v,m,p,d,A,R,w,q,Y,g,y,x,P,E,T,b=e[0],D=e[1],L=e[2],_=Math.sqrt(b*b+D*D+L*L);return Math.abs(_)\u003ca.EPSILON?null:(_=1/_,b*=_,D*=_,L*=_,u=Math.sin(r),o=Math.cos(r),i=1-o,c=n[0],f=n[1],s=n[2],h=n[3],M=n[4],l=n[5],v=n[6],m=n[7],p=n[8],d=n[9],A=n[10],R=n[11],w=b*b*i+o,q=D*b*i+L*u,Y=L*b*i-D*u,g=b*D*i-L*u,y=D*D*i+o,x=L*D*i+b*u,P=b*L*i+D*u,E=D*L*i-b*u,T=L*L*i+o,t[0]=c*w+M*q+p*Y,t[1]=f*w+l*q+d*Y,t[2]=s*w+v*q+A*Y,t[3]=h*w+m*q+R*Y,t[4]=c*g+M*y+p*x,t[5]=f*g+l*y+d*x,t[6]=s*g+v*y+A*x,t[7]=h*g+m*y+R*x,t[8]=c*P+M*E+p*T,t[9]=f*P+l*E+d*T,t[10]=s*P+v*E+A*T,t[11]=h*P+m*E+R*T,n!==t&&(t[12]=n[12],t[13]=n[13],t[14]=n[14],t[15]=n[15]),t)},e.rotateX=function(t,n,r){var a=Math.sin(r),e=Math.cos(r),u=n[4],o=n[5],i=n[6],c=n[7],f=n[8],s=n[9],h=n[10],M=n[11];return n!==t&&(t[0]=n[0],t[1]=n[1],t[2]=n[2],t[3]=n[3],t[12]=n[12],t[13]=n[13],t[14]=n[14],t[15]=n[15]),t[4]=u*e+f*a,t[5]=o*e+s*a,t[6]=i*e+h*a,t[7]=c*e+M*a,t[8]=f*e-u*a,t[9]=s*e-o*a,t[10]=h*e-i*a,t[11]=M*e-c*a,t},e.rotateY=function(t,n,r){var a=Math.sin(r),e=Math.cos(r),u=n[0],o=n[1],i=n[2],c=n[3],f=n[8],s=n[9],h=n[10],M=n[11];return n!==t&&(t[4]=n[4],t[5]=n[5],t[6]=n[6],t[7]=n[7],t[12]=n[12],t[13]=n[13],t[14]=n[14],t[15]=n[15]),t[0]=u*e-f*a,t[1]=o*e-s*a,t[2]=i*e-h*a,t[3]=c*e-M*a,t[8]=u*a+f*e,t[9]=o*a+s*e,t[10]=i*a+h*e,t[11]=c*a+M*e,t},e.rotateZ=function(t,n,r){var a=Math.sin(r),e=Math.cos(r),u=n[0],o=n[1],i=n[2],c=n[3],f=n[4],s=n[5],h=n[6],M=n[7];return n!==t&&(t[8]=n[8],t[9]=n[9],t[10]=n[10],t[11]=n[11],t[12]=n[12],t[13]=n[13],t[14]=n[14],t[15]=n[15]),t[0]=u*e+f*a,t[1]=o*e+s*a,t[2]=i*e+h*a,t[3]=c*e+M*a,t[4]=f*e-u*a,t[5]=s*e-o*a,t[6]=h*e-i*a,t[7]=M*e-c*a,t},e.fromTranslation=function(t,n){return t[0]=1,t[1]=0,t[2]=0,t[3]=0,t[4]=0,t[5]=1,t[6]=0,t[7]=0,t[8]=0,t[9]=0,t[10]=1,t[11]=0,t[12]=n[0],t[13]=n[1],t[14]=n[2],t[15]=1,t},e.fromScaling=function(t,n){return t[0]=n[0],t[1]=0,t[2]=0,t[3]=0,t[4]=0,t[5]=n[1],t[6]=0,t[7]=0,t[8]=0,t[9]=0,t[10]=n[2],t[11]=0,t[12]=0,t[13]=0,t[14]=0,t[15]=1,t},e.fromRotation=function(t,n,r){var e,u,o,i=r[0],c=r[1],f=r[2],s=Math.sqrt(i*i+c*c+f*f);return Math.abs(s)\u003ca.EPSILON?null:(s=1/s,i*=s,c*=s,f*=s,e=Math.sin(n),u=Math.cos(n),o=1-u,t[0]=i*i*o+u,t[1]=c*i*o+f*e,t[2]=f*i*o-c*e,t[3]=0,t[4]=i*c*o-f*e,t[5]=c*c*o+u,t[6]=f*c*o+i*e,t[7]=0,t[8]=i*f*o+c*e,t[9]=c*f*o-i*e,t[10]=f*f*o+u,t[11]=0,t[12]=0,t[13]=0,t[14]=0,t[15]=1,t)},e.fromXRotation=function(t,n){var r=Math.sin(n),a=Math.cos(n);return t[0]=1,t[1]=0,t[2]=0,t[3]=0,t[4]=0,t[5]=a,t[6]=r,t[7]=0,t[8]=0,t[9]=-r,t[10]=a,t[11]=0,t[12]=0,t[13]=0,t[14]=0,t[15]=1,t},e.fromYRotation=function(t,n){var r=Math.sin(n),a=Math.cos(n);return t[0]=a,t[1]=0,t[2]=-r,t[3]=0,t[4]=0,t[5]=1,t[6]=0,t[7]=0,t[8]=r,t[9]=0,t[10]=a,t[11]=0,t[12]=0,t[13]=0,t[14]=0,t[15]=1,t},e.fromZRotation=function(t,n){var r=Math.sin(n),a=Math.cos(n);return t[0]=a,t[1]=r,t[2]=0,t[3]=0,t[4]=-r,t[5]=a,t[6]=0,t[7]=0,t[8]=0,t[9]=0,t[10]=1,t[11]=0,t[12]=0,t[13]=0,t[14]=0,t[15]=1,t},e.fromRotationTranslation=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=a+a,c=e+e,f=u+u,s=a*i,h=a*c,M=a*f,l=e*c,v=e*f,m=u*f,p=o*i,d=o*c,A=o*f;return t[0]=1-(l+m),t[1]=h+A,t[2]=M-d,t[3]=0,t[4]=h-A,t[5]=1-(s+m),t[6]=v+p,t[7]=0,t[8]=M+d,t[9]=v-p,t[10]=1-(s+l),t[11]=0,t[12]=r[0],t[13]=r[1],t[14]=r[2],t[15]=1,t},e.fromRotationTranslationScale=function(t,n,r,a){var e=n[0],u=n[1],o=n[2],i=n[3],c=e+e,f=u+u,s=o+o,h=e*c,M=e*f,l=e*s,v=u*f,m=u*s,p=o*s,d=i*c,A=i*f,R=i*s,w=a[0],q=a[1],Y=a[2];return t[0]=(1-(v+p))*w,t[1]=(M+R)*w,t[2]=(l-A)*w,t[3]=0,t[4]=(M-R)*q,t[5]=(1-(h+p))*q,t[6]=(m+d)*q,t[7]=0,t[8]=(l+A)*Y,t[9]=(m-d)*Y,t[10]=(1-(h+v))*Y,t[11]=0,t[12]=r[0],t[13]=r[1],t[14]=r[2],t[15]=1,t},e.fromRotationTranslationScaleOrigin=function(t,n,r,a,e){var u=n[0],o=n[1],i=n[2],c=n[3],f=u+u,s=o+o,h=i+i,M=u*f,l=u*s,v=u*h,m=o*s,p=o*h,d=i*h,A=c*f,R=c*s,w=c*h,q=a[0],Y=a[1],g=a[2],y=e[0],x=e[1],P=e[2];return t[0]=(1-(m+d))*q,t[1]=(l+w)*q,t[2]=(v-R)*q,t[3]=0,t[4]=(l-w)*Y,t[5]=(1-(M+d))*Y,t[6]=(p+A)*Y,t[7]=0,t[8]=(v+R)*g,t[9]=(p-A)*g,t[10]=(1-(M+m))*g,t[11]=0,t[12]=r[0]+y-(t[0]*y+t[4]*x+t[8]*P),t[13]=r[1]+x-(t[1]*y+t[5]*x+t[9]*P),t[14]=r[2]+P-(t[2]*y+t[6]*x+t[10]*P),t[15]=1,t},e.fromQuat=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=r+r,i=a+a,c=e+e,f=r*o,s=a*o,h=a*i,M=e*o,l=e*i,v=e*c,m=u*o,p=u*i,d=u*c;return t[0]=1-h-v,t[1]=s+d,t[2]=M-p,t[3]=0,t[4]=s-d,t[5]=1-f-v,t[6]=l+m,t[7]=0,t[8]=M+p,t[9]=l-m,t[10]=1-f-h,t[11]=0,t[12]=0,t[13]=0,t[14]=0,t[15]=1,t},e.frustum=function(t,n,r,a,e,u,o){var i=1/(r-n),c=1/(e-a),f=1/(u-o);return t[0]=2*u*i,t[1]=0,t[2]=0,t[3]=0,t[4]=0,t[5]=2*u*c,t[6]=0,t[7]=0,t[8]=(r+n)*i,t[9]=(e+a)*c,t[10]=(o+u)*f,t[11]=-1,t[12]=0,t[13]=0,t[14]=o*u*2*f,t[15]=0,t},e.perspective=function(t,n,r,a,e){var u=1/Math.tan(n/2),o=1/(a-e);return t[0]=u/r,t[1]=0,t[2]=0,t[3]=0,t[4]=0,t[5]=u,t[6]=0,t[7]=0,t[8]=0,t[9]=0,t[10]=(e+a)*o,t[11]=-1,t[12]=0,t[13]=0,t[14]=2*e*a*o,t[15]=0,t},e.perspectiveFromFieldOfView=function(t,n,r,a){var e=Math.tan(n.upDegrees*Math.PI/180),u=Math.tan(n.downDegrees*Math.PI/180),o=Math.tan(n.leftDegrees*Math.PI/180),i=Math.tan(n.rightDegrees*Math.PI/180),c=2/(o+i),f=2/(e+u);return t[0]=c,t[1]=0,t[2]=0,t[3]=0,t[4]=0,t[5]=f,t[6]=0,t[7]=0,t[8]=-((o-i)*c*.5),t[9]=(e-u)*f*.5,t[10]=a/(r-a),t[11]=-1,t[12]=0,t[13]=0,t[14]=a*r/(r-a),t[15]=0,t},e.ortho=function(t,n,r,a,e,u,o){var i=1/(n-r),c=1/(a-e),f=1/(u-o);return t[0]=-2*i,t[1]=0,t[2]=0,t[3]=0,t[4]=0,t[5]=-2*c,t[6]=0,t[7]=0,t[8]=0,t[9]=0,t[10]=2*f,t[11]=0,t[12]=(n+r)*i,t[13]=(e+a)*c,t[14]=(o+u)*f,t[15]=1,t},e.lookAt=function(t,n,r,u){var o,i,c,f,s,h,M,l,v,m,p=n[0],d=n[1],A=n[2],R=u[0],w=u[1],q=u[2],Y=r[0],g=r[1],y=r[2];return Math.abs(p-Y)\u003ca.EPSILON&&Math.abs(d-g)\u003ca.EPSILON&&Math.abs(A-y)\u003ca.EPSILON?e.identity(t):(M=p-Y,l=d-g,v=A-y,m=1/Math.sqrt(M*M+l*l+v*v),M*=m,l*=m,v*=m,o=w*v-q*l,i=q*M-R*v,c=R*l-w*M,m=Math.sqrt(o*o+i*i+c*c),m?(m=1/m,o*=m,i*=m,c*=m):(o=0,i=0,c=0),f=l*c-v*i,s=v*o-M*c,h=M*i-l*o,m=Math.sqrt(f*f+s*s+h*h),m?(m=1/m,f*=m,s*=m,h*=m):(f=0,s=0,h=0),t[0]=o,t[1]=f,t[2]=M,t[3]=0,t[4]=i,t[5]=s,t[6]=l,t[7]=0,t[8]=c,t[9]=h,t[10]=v,t[11]=0,t[12]=-(o*p+i*d+c*A),t[13]=-(f*p+s*d+h*A),t[14]=-(M*p+l*d+v*A),t[15]=1,t)},e.str=function(t){return\"mat4(\"+t[0]+\", \"+t[1]+\", \"+t[2]+\", \"+t[3]+\", \"+t[4]+\", \"+t[5]+\", \"+t[6]+\", \"+t[7]+\", \"+t[8]+\", \"+t[9]+\", \"+t[10]+\", \"+t[11]+\", \"+t[12]+\", \"+t[13]+\", \"+t[14]+\", \"+t[15]+\")\"},e.frob=function(t){return Math.sqrt(Math.pow(t[0],2)+Math.pow(t[1],2)+Math.pow(t[2],2)+Math.pow(t[3],2)+Math.pow(t[4],2)+Math.pow(t[5],2)+Math.pow(t[6],2)+Math.pow(t[7],2)+Math.pow(t[8],2)+Math.pow(t[9],2)+Math.pow(t[10],2)+Math.pow(t[11],2)+Math.pow(t[12],2)+Math.pow(t[13],2)+Math.pow(t[14],2)+Math.pow(t[15],2))},t.exports=e},function(t,n,r){var a=r(1),e=r(4),u=r(7),o=r(8),i={};i.create=function(){var t=new a.ARRAY_TYPE(4);return t[0]=0,t[1]=0,t[2]=0,t[3]=1,t},i.rotationTo=function(){var t=u.create(),n=u.fromValues(1,0,0),r=u.fromValues(0,1,0);return function(a,e,o){var c=u.dot(e,o);return-.999999>c?(u.cross(t,n,e),u.length(t)\u003c1e-6&&u.cross(t,r,e),u.normalize(t,t),i.setAxisAngle(a,t,Math.PI),a):c>.999999?(a[0]=0,a[1]=0,a[2]=0,a[3]=1,a):(u.cross(t,e,o),a[0]=t[0],a[1]=t[1],a[2]=t[2],a[3]=1+c,i.normalize(a,a))}}(),i.setAxes=function(){var t=e.create();return function(n,r,a,e){return t[0]=a[0],t[3]=a[1],t[6]=a[2],t[1]=e[0],t[4]=e[1],t[7]=e[2],t[2]=-r[0],t[5]=-r[1],t[8]=-r[2],i.normalize(n,i.fromMat3(n,t))}}(),i.clone=o.clone,i.fromValues=o.fromValues,i.copy=o.copy,i.set=o.set,i.identity=function(t){return t[0]=0,t[1]=0,t[2]=0,t[3]=1,t},i.setAxisAngle=function(t,n,r){r=.5*r;var a=Math.sin(r);return t[0]=a*n[0],t[1]=a*n[1],t[2]=a*n[2],t[3]=Math.cos(r),t},i.add=o.add,i.multiply=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3],i=r[0],c=r[1],f=r[2],s=r[3];return t[0]=a*s+o*i+e*f-u*c,t[1]=e*s+o*c+u*i-a*f,t[2]=u*s+o*f+a*c-e*i,t[3]=o*s-a*i-e*c-u*f,t},i.mul=i.multiply,i.scale=o.scale,i.rotateX=function(t,n,r){r*=.5;var a=n[0],e=n[1],u=n[2],o=n[3],i=Math.sin(r),c=Math.cos(r);return t[0]=a*c+o*i,t[1]=e*c+u*i,t[2]=u*c-e*i,t[3]=o*c-a*i,t},i.rotateY=function(t,n,r){r*=.5;var a=n[0],e=n[1],u=n[2],o=n[3],i=Math.sin(r),c=Math.cos(r);return t[0]=a*c-u*i,t[1]=e*c+o*i,t[2]=u*c+a*i,t[3]=o*c-e*i,t},i.rotateZ=function(t,n,r){r*=.5;var a=n[0],e=n[1],u=n[2],o=n[3],i=Math.sin(r),c=Math.cos(r);return t[0]=a*c+e*i,t[1]=e*c-a*i,t[2]=u*c+o*i,t[3]=o*c-u*i,t},i.calculateW=function(t,n){var r=n[0],a=n[1],e=n[2];return t[0]=r,t[1]=a,t[2]=e,t[3]=Math.sqrt(Math.abs(1-r*r-a*a-e*e)),t},i.dot=o.dot,i.lerp=o.lerp,i.slerp=function(t,n,r,a){var e,u,o,i,c,f=n[0],s=n[1],h=n[2],M=n[3],l=r[0],v=r[1],m=r[2],p=r[3];return u=f*l+s*v+h*m+M*p,0>u&&(u=-u,l=-l,v=-v,m=-m,p=-p),1-u>1e-6?(e=Math.acos(u),o=Math.sin(e),i=Math.sin((1-a)*e)/o,c=Math.sin(a*e)/o):(i=1-a,c=a),t[0]=i*f+c*l,t[1]=i*s+c*v,t[2]=i*h+c*m,t[3]=i*M+c*p,t},i.sqlerp=function(){var t=i.create(),n=i.create();return function(r,a,e,u,o,c){return i.slerp(t,a,o,c),i.slerp(n,e,u,c),i.slerp(r,t,n,2*c*(1-c)),r}}(),i.invert=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=r*r+a*a+e*e+u*u,i=o?1/o:0;return t[0]=-r*i,t[1]=-a*i,t[2]=-e*i,t[3]=u*i,t},i.conjugate=function(t,n){return t[0]=-n[0],t[1]=-n[1],t[2]=-n[2],t[3]=n[3],t},i.length=o.length,i.len=i.length,i.squaredLength=o.squaredLength,i.sqrLen=i.squaredLength,i.normalize=o.normalize,i.fromMat3=function(t,n){var r,a=n[0]+n[4]+n[8];if(a>0)r=Math.sqrt(a+1),t[3]=.5*r,r=.5/r,t[0]=(n[5]-n[7])*r,t[1]=(n[6]-n[2])*r,t[2]=(n[1]-n[3])*r;else{var e=0;n[4]>n[0]&&(e=1),n[8]>n[3*e+e]&&(e=2);var u=(e+1)%3,o=(e+2)%3;r=Math.sqrt(n[3*e+e]-n[3*u+u]-n[3*o+o]+1),t[e]=.5*r,r=.5/r,t[3]=(n[3*u+o]-n[3*o+u])*r,t[u]=(n[3*u+e]+n[3*e+u])*r,t[o]=(n[3*o+e]+n[3*e+o])*r}return t},i.str=function(t){return\"quat(\"+t[0]+\", \"+t[1]+\", \"+t[2]+\", \"+t[3]+\")\"},t.exports=i},function(t,n,r){var a=r(1),e={};e.create=function(){var t=new a.ARRAY_TYPE(3);return t[0]=0,t[1]=0,t[2]=0,t},e.clone=function(t){var n=new a.ARRAY_TYPE(3);return n[0]=t[0],n[1]=t[1],n[2]=t[2],n},e.fromValues=function(t,n,r){var e=new a.ARRAY_TYPE(3);return e[0]=t,e[1]=n,e[2]=r,e},e.copy=function(t,n){return t[0]=n[0],t[1]=n[1],t[2]=n[2],t},e.set=function(t,n,r,a){return t[0]=n,t[1]=r,t[2]=a,t},e.add=function(t,n,r){return t[0]=n[0]+r[0],t[1]=n[1]+r[1],t[2]=n[2]+r[2],t},e.subtract=function(t,n,r){return t[0]=n[0]-r[0],t[1]=n[1]-r[1],t[2]=n[2]-r[2],t},e.sub=e.subtract,e.multiply=function(t,n,r){return t[0]=n[0]*r[0],t[1]=n[1]*r[1],t[2]=n[2]*r[2],t},e.mul=e.multiply,e.divide=function(t,n,r){return t[0]=n[0]/r[0],t[1]=n[1]/r[1],t[2]=n[2]/r[2],t},e.div=e.divide,e.min=function(t,n,r){return t[0]=Math.min(n[0],r[0]),t[1]=Math.min(n[1],r[1]),t[2]=Math.min(n[2],r[2]),t},e.max=function(t,n,r){return t[0]=Math.max(n[0],r[0]),t[1]=Math.max(n[1],r[1]),t[2]=Math.max(n[2],r[2]),t},e.scale=function(t,n,r){return t[0]=n[0]*r,t[1]=n[1]*r,t[2]=n[2]*r,t},e.scaleAndAdd=function(t,n,r,a){return t[0]=n[0]+r[0]*a,t[1]=n[1]+r[1]*a,t[2]=n[2]+r[2]*a,t},e.distance=function(t,n){var r=n[0]-t[0],a=n[1]-t[1],e=n[2]-t[2];return Math.sqrt(r*r+a*a+e*e)},e.dist=e.distance,e.squaredDistance=function(t,n){var r=n[0]-t[0],a=n[1]-t[1],e=n[2]-t[2];return r*r+a*a+e*e},e.sqrDist=e.squaredDistance,e.length=function(t){var n=t[0],r=t[1],a=t[2];return Math.sqrt(n*n+r*r+a*a)},e.len=e.length,e.squaredLength=function(t){var n=t[0],r=t[1],a=t[2];return n*n+r*r+a*a},e.sqrLen=e.squaredLength,e.negate=function(t,n){return t[0]=-n[0],t[1]=-n[1],t[2]=-n[2],t},e.inverse=function(t,n){return t[0]=1/n[0],t[1]=1/n[1],t[2]=1/n[2],t},e.normalize=function(t,n){var r=n[0],a=n[1],e=n[2],u=r*r+a*a+e*e;return u>0&&(u=1/Math.sqrt(u),t[0]=n[0]*u,t[1]=n[1]*u,t[2]=n[2]*u),t},e.dot=function(t,n){return t[0]*n[0]+t[1]*n[1]+t[2]*n[2]},e.cross=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=r[0],i=r[1],c=r[2];return t[0]=e*c-u*i,t[1]=u*o-a*c,t[2]=a*i-e*o,t},e.lerp=function(t,n,r,a){var e=n[0],u=n[1],o=n[2];return t[0]=e+a*(r[0]-e),t[1]=u+a*(r[1]-u),t[2]=o+a*(r[2]-o),t},e.hermite=function(t,n,r,a,e,u){var o=u*u,i=o*(2*u-3)+1,c=o*(u-2)+u,f=o*(u-1),s=o*(3-2*u);return t[0]=n[0]*i+r[0]*c+a[0]*f+e[0]*s,t[1]=n[1]*i+r[1]*c+a[1]*f+e[1]*s,t[2]=n[2]*i+r[2]*c+a[2]*f+e[2]*s,t},e.bezier=function(t,n,r,a,e,u){var o=1-u,i=o*o,c=u*u,f=i*o,s=3*u*i,h=3*c*o,M=c*u;return t[0]=n[0]*f+r[0]*s+a[0]*h+e[0]*M,t[1]=n[1]*f+r[1]*s+a[1]*h+e[1]*M,t[2]=n[2]*f+r[2]*s+a[2]*h+e[2]*M,t},e.random=function(t,n){n=n||1;var r=2*a.RANDOM()*Math.PI,e=2*a.RANDOM()-1,u=Math.sqrt(1-e*e)*n;return t[0]=Math.cos(r)*u,t[1]=Math.sin(r)*u,t[2]=e*n,t},e.transformMat4=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=r[3]*a+r[7]*e+r[11]*u+r[15];return o=o||1,t[0]=(r[0]*a+r[4]*e+r[8]*u+r[12])/o,t[1]=(r[1]*a+r[5]*e+r[9]*u+r[13])/o,t[2]=(r[2]*a+r[6]*e+r[10]*u+r[14])/o,t},e.transformMat3=function(t,n,r){var a=n[0],e=n[1],u=n[2];return t[0]=a*r[0]+e*r[3]+u*r[6],t[1]=a*r[1]+e*r[4]+u*r[7],t[2]=a*r[2]+e*r[5]+u*r[8],t},e.transformQuat=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=r[0],i=r[1],c=r[2],f=r[3],s=f*a+i*u-c*e,h=f*e+c*a-o*u,M=f*u+o*e-i*a,l=-o*a-i*e-c*u;return t[0]=s*f+l*-o+h*-c-M*-i,t[1]=h*f+l*-i+M*-o-s*-c,t[2]=M*f+l*-c+s*-i-h*-o,t},e.rotateX=function(t,n,r,a){var e=[],u=[];return e[0]=n[0]-r[0],e[1]=n[1]-r[1],e[2]=n[2]-r[2],u[0]=e[0],u[1]=e[1]*Math.cos(a)-e[2]*Math.sin(a),u[2]=e[1]*Math.sin(a)+e[2]*Math.cos(a),t[0]=u[0]+r[0],t[1]=u[1]+r[1],t[2]=u[2]+r[2],t},e.rotateY=function(t,n,r,a){var e=[],u=[];return e[0]=n[0]-r[0],e[1]=n[1]-r[1],e[2]=n[2]-r[2],u[0]=e[2]*Math.sin(a)+e[0]*Math.cos(a),u[1]=e[1],u[2]=e[2]*Math.cos(a)-e[0]*Math.sin(a),t[0]=u[0]+r[0],t[1]=u[1]+r[1],t[2]=u[2]+r[2],t},e.rotateZ=function(t,n,r,a){var e=[],u=[];return e[0]=n[0]-r[0],e[1]=n[1]-r[1],e[2]=n[2]-r[2],u[0]=e[0]*Math.cos(a)-e[1]*Math.sin(a),u[1]=e[0]*Math.sin(a)+e[1]*Math.cos(a),u[2]=e[2],t[0]=u[0]+r[0],t[1]=u[1]+r[1],t[2]=u[2]+r[2],t},e.forEach=function(){var t=e.create();return function(n,r,a,e,u,o){var i,c;for(r||(r=3),a||(a=0),c=e?Math.min(e*r+a,n.length):n.length,i=a;c>i;i+=r)t[0]=n[i],t[1]=n[i+1],t[2]=n[i+2],u(t,t,o),n[i]=t[0],n[i+1]=t[1],n[i+2]=t[2];return n}}(),e.angle=function(t,n){var r=e.fromValues(t[0],t[1],t[2]),a=e.fromValues(n[0],n[1],n[2]);e.normalize(r,r),e.normalize(a,a);var u=e.dot(r,a);return u>1?0:Math.acos(u)},e.str=function(t){return\"vec3(\"+t[0]+\", \"+t[1]+\", \"+t[2]+\")\"},t.exports=e},function(t,n,r){var a=r(1),e={};e.create=function(){var t=new a.ARRAY_TYPE(4);return t[0]=0,t[1]=0,t[2]=0,t[3]=0,t},e.clone=function(t){var n=new a.ARRAY_TYPE(4);return n[0]=t[0],n[1]=t[1],n[2]=t[2],n[3]=t[3],n},e.fromValues=function(t,n,r,e){var u=new a.ARRAY_TYPE(4);return u[0]=t,u[1]=n,u[2]=r,u[3]=e,u},e.copy=function(t,n){return t[0]=n[0],t[1]=n[1],t[2]=n[2],t[3]=n[3],t},e.set=function(t,n,r,a,e){return t[0]=n,t[1]=r,t[2]=a,t[3]=e,t},e.add=function(t,n,r){return t[0]=n[0]+r[0],t[1]=n[1]+r[1],t[2]=n[2]+r[2],t[3]=n[3]+r[3],t},e.subtract=function(t,n,r){return t[0]=n[0]-r[0],t[1]=n[1]-r[1],t[2]=n[2]-r[2],t[3]=n[3]-r[3],t},e.sub=e.subtract,e.multiply=function(t,n,r){return t[0]=n[0]*r[0],t[1]=n[1]*r[1],t[2]=n[2]*r[2],t[3]=n[3]*r[3],t},e.mul=e.multiply,e.divide=function(t,n,r){return t[0]=n[0]/r[0],t[1]=n[1]/r[1],t[2]=n[2]/r[2],t[3]=n[3]/r[3],t},e.div=e.divide,e.min=function(t,n,r){return t[0]=Math.min(n[0],r[0]),t[1]=Math.min(n[1],r[1]),t[2]=Math.min(n[2],r[2]),t[3]=Math.min(n[3],r[3]),t},e.max=function(t,n,r){return t[0]=Math.max(n[0],r[0]),t[1]=Math.max(n[1],r[1]),t[2]=Math.max(n[2],r[2]),t[3]=Math.max(n[3],r[3]),t},e.scale=function(t,n,r){return t[0]=n[0]*r,t[1]=n[1]*r,t[2]=n[2]*r,t[3]=n[3]*r,t},e.scaleAndAdd=function(t,n,r,a){return t[0]=n[0]+r[0]*a,t[1]=n[1]+r[1]*a,t[2]=n[2]+r[2]*a,t[3]=n[3]+r[3]*a,t},e.distance=function(t,n){var r=n[0]-t[0],a=n[1]-t[1],e=n[2]-t[2],u=n[3]-t[3];return Math.sqrt(r*r+a*a+e*e+u*u)},e.dist=e.distance,e.squaredDistance=function(t,n){var r=n[0]-t[0],a=n[1]-t[1],e=n[2]-t[2],u=n[3]-t[3];return r*r+a*a+e*e+u*u},e.sqrDist=e.squaredDistance,e.length=function(t){var n=t[0],r=t[1],a=t[2],e=t[3];return Math.sqrt(n*n+r*r+a*a+e*e)},e.len=e.length,e.squaredLength=function(t){var n=t[0],r=t[1],a=t[2],e=t[3];return n*n+r*r+a*a+e*e},e.sqrLen=e.squaredLength,e.negate=function(t,n){return t[0]=-n[0],t[1]=-n[1],t[2]=-n[2],t[3]=-n[3],t},e.inverse=function(t,n){return t[0]=1/n[0],t[1]=1/n[1],t[2]=1/n[2],t[3]=1/n[3],t},e.normalize=function(t,n){var r=n[0],a=n[1],e=n[2],u=n[3],o=r*r+a*a+e*e+u*u;return o>0&&(o=1/Math.sqrt(o),t[0]=r*o,t[1]=a*o,t[2]=e*o,t[3]=u*o),t},e.dot=function(t,n){return t[0]*n[0]+t[1]*n[1]+t[2]*n[2]+t[3]*n[3]},e.lerp=function(t,n,r,a){var e=n[0],u=n[1],o=n[2],i=n[3];return t[0]=e+a*(r[0]-e),t[1]=u+a*(r[1]-u),t[2]=o+a*(r[2]-o),t[3]=i+a*(r[3]-i),t},e.random=function(t,n){return n=n||1,t[0]=a.RANDOM(),t[1]=a.RANDOM(),t[2]=a.RANDOM(),t[3]=a.RANDOM(),e.normalize(t,t),e.scale(t,t,n),t},e.transformMat4=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=n[3];return t[0]=r[0]*a+r[4]*e+r[8]*u+r[12]*o,t[1]=r[1]*a+r[5]*e+r[9]*u+r[13]*o,t[2]=r[2]*a+r[6]*e+r[10]*u+r[14]*o,t[3]=r[3]*a+r[7]*e+r[11]*u+r[15]*o,t},e.transformQuat=function(t,n,r){var a=n[0],e=n[1],u=n[2],o=r[0],i=r[1],c=r[2],f=r[3],s=f*a+i*u-c*e,h=f*e+c*a-o*u,M=f*u+o*e-i*a,l=-o*a-i*e-c*u;return t[0]=s*f+l*-o+h*-c-M*-i,t[1]=h*f+l*-i+M*-o-s*-c,t[2]=M*f+l*-c+s*-i-h*-o,t[3]=n[3],t},e.forEach=function(){var t=e.create();return function(n,r,a,e,u,o){var i,c;for(r||(r=4),a||(a=0),c=e?Math.min(e*r+a,n.length):n.length,i=a;c>i;i+=r)t[0]=n[i],t[1]=n[i+1],t[2]=n[i+2],t[3]=n[i+3],u(t,t,o),n[i]=t[0],n[i+1]=t[1],n[i+2]=t[2],n[i+3]=t[3];return n}}(),e.str=function(t){return\"vec4(\"+t[0]+\", \"+t[1]+\", \"+t[2]+\", \"+t[3]+\")\"},t.exports=e},function(t,n,r){var a=r(1),e={};e.create=function(){var t=new a.ARRAY_TYPE(2);return t[0]=0,t[1]=0,t},e.clone=function(t){var n=new a.ARRAY_TYPE(2);return n[0]=t[0],n[1]=t[1],n},e.fromValues=function(t,n){var r=new a.ARRAY_TYPE(2);return r[0]=t,r[1]=n,r},e.copy=function(t,n){return t[0]=n[0],t[1]=n[1],t},e.set=function(t,n,r){return t[0]=n,t[1]=r,t},e.add=function(t,n,r){return t[0]=n[0]+r[0],t[1]=n[1]+r[1],t},e.subtract=function(t,n,r){return t[0]=n[0]-r[0],t[1]=n[1]-r[1],t},e.sub=e.subtract,e.multiply=function(t,n,r){return t[0]=n[0]*r[0],t[1]=n[1]*r[1],t},e.mul=e.multiply,e.divide=function(t,n,r){return t[0]=n[0]/r[0],t[1]=n[1]/r[1],t},e.div=e.divide,e.min=function(t,n,r){return t[0]=Math.min(n[0],r[0]),t[1]=Math.min(n[1],r[1]),t},e.max=function(t,n,r){return t[0]=Math.max(n[0],r[0]),t[1]=Math.max(n[1],r[1]),t},e.scale=function(t,n,r){return t[0]=n[0]*r,t[1]=n[1]*r,t},e.scaleAndAdd=function(t,n,r,a){return t[0]=n[0]+r[0]*a,t[1]=n[1]+r[1]*a,t},e.distance=function(t,n){var r=n[0]-t[0],a=n[1]-t[1];return Math.sqrt(r*r+a*a)},e.dist=e.distance,e.squaredDistance=function(t,n){var r=n[0]-t[0],a=n[1]-t[1];return r*r+a*a},e.sqrDist=e.squaredDistance,e.length=function(t){var n=t[0],r=t[1];return Math.sqrt(n*n+r*r)},e.len=e.length,e.squaredLength=function(t){var n=t[0],r=t[1];return n*n+r*r},e.sqrLen=e.squaredLength,e.negate=function(t,n){return t[0]=-n[0],t[1]=-n[1],t},e.inverse=function(t,n){return t[0]=1/n[0],t[1]=1/n[1],t},e.normalize=function(t,n){var r=n[0],a=n[1],e=r*r+a*a;return e>0&&(e=1/Math.sqrt(e),t[0]=n[0]*e,t[1]=n[1]*e),t},e.dot=function(t,n){return t[0]*n[0]+t[1]*n[1]},e.cross=function(t,n,r){var a=n[0]*r[1]-n[1]*r[0];return t[0]=t[1]=0,t[2]=a,t},e.lerp=function(t,n,r,a){var e=n[0],u=n[1];return t[0]=e+a*(r[0]-e),t[1]=u+a*(r[1]-u),t},e.random=function(t,n){n=n||1;var r=2*a.RANDOM()*Math.PI;return t[0]=Math.cos(r)*n,t[1]=Math.sin(r)*n,t},e.transformMat2=function(t,n,r){var a=n[0],e=n[1];return t[0]=r[0]*a+r[2]*e,t[1]=r[1]*a+r[3]*e,t},e.transformMat2d=function(t,n,r){var a=n[0],e=n[1];return t[0]=r[0]*a+r[2]*e+r[4],t[1]=r[1]*a+r[3]*e+r[5],t},e.transformMat3=function(t,n,r){\nvar a=n[0],e=n[1];return t[0]=r[0]*a+r[3]*e+r[6],t[1]=r[1]*a+r[4]*e+r[7],t},e.transformMat4=function(t,n,r){var a=n[0],e=n[1];return t[0]=r[0]*a+r[4]*e+r[12],t[1]=r[1]*a+r[5]*e+r[13],t},e.forEach=function(){var t=e.create();return function(n,r,a,e,u,o){var i,c;for(r||(r=2),a||(a=0),c=e?Math.min(e*r+a,n.length):n.length,i=a;c>i;i+=r)t[0]=n[i],t[1]=n[i+1],u(t,t,o),n[i]=t[0],n[i+1]=t[1];return n}}(),e.str=function(t){return\"vec2(\"+t[0]+\", \"+t[1]+\")\"},t.exports=e}])});", "tb": "/**\n * An object of type TrackballRotator can be used to implement a trackball-like mouse rotation\n * of a WebGL scene about the origin.  Only the first parameter to the constructor is required.\n * When an object is created, mouse event handlers are set up on the canvas to respond to rotation.\n * It will also work with a touchscreen.\n * \n * The class defines the following methods for an object rotator of type SimpleRotator:\n *\n *    rotator.getViewMatrix() returns the view transformation matrix as a regular JavaScript\n *         array of 16 elements, in column-major orde, suitable for use with gl.uniformMatrix4fv\n *         or for further transformation with the glMatrix library mat4 class.\n *    rotator.setView(viewDistance, viewpointDirection, viewUp) set up the view, where the\n *         parameters are optional and are used in the same way as the corresponding parameters\n *         in the constructor.\n *    rotator.setViewDistance(viewDistance) sets the distance of the viewer from the origin without\n *         changing the direction of view. The parameter must be a positive number.\n *    rotator.getViewDistance() returns the current value.\n *    rotator.setRotationCenter( vector ) -- Sets the center of rotation.\n *       The parameter must be an array of (at least) three numbers.  The\n *       view is rotated about this point.  Usually, you want the rotation\n *       center to be the point that appears at the middle of the canvas,\n *       but that is not a requirement.  The initial value is effectively\n *       equal to [0,0,0].\n *    rotator.getRotationCenter() -- returns the current value.\n *\n * @param canvas the HTML canvas element used for WebGL drawing.  The user will rotate the\n *    scene by dragging the mouse on this canvas.  This parameter is required.\n * @param callback if present must be a function, which is called whenever the rotation changes.\n *    It is typically the function that draws the scene\n * @param viewDistance if present must be a positive number.  Gives the distance of the viewer\n *    from the origin.  If not present, the length is zero, which can be OK for orthographic projection,\n *    but never for perspective projection.\n * @param viewpointDirection if present must be an array of three numbers, not all zero.  The\n *    view is from the direction of this vector towards the origin (0,0,0).  If not present,\n *    the value [0,0,10] is used.  This is just the initial value for viewpointDirection; it will\n *    be modified by rotation.\n * @param viewUp if present must be an array of three numbers. Gives a vector that will\n *    be seen as pointing upwards in the view.  If not present, the value is [0,1,0].\n *    Cannot be a multiple of viewpointDirection.  This is just the initial value for\n *    viewUp; it will be modified by rotation.\n */\nfunction TrackballRotator(canvas, callback, viewDistance, viewpointDirection, viewUp) {\n    var unitx = new Array(3);\n    var unity = new Array(3);\n    var unitz = new Array(3);\n    var viewZ;  // view distance; z-coord in eye coordinates;\n    var center; // center of view; rotation is about this point; default is [0,0,0] \n    this.setView = function( viewDistance, viewpointDirection, viewUp ) {\n        unitz = (viewpointDirection === undefined)? [0,0,10] : viewpointDirection;\n        viewUp = (viewUp === undefined)? [0,1,0] : viewUp;\n        viewZ = viewDistance;\n        normalize(unitz, unitz);\n        copy(unity,unitz);\n        scale(unity, unity, dot(unitz,viewUp));\n        subtract(unity,viewUp,unity);\n        normalize(unity,unity);\n        cross(unitx,unity,unitz);\n    };\n    this.getViewMatrix = function() {\n        var mat = [ unitx[0], unity[0], unitz[0], 0,\n                unitx[1], unity[1], unitz[1], 0, \n                unitx[2], unity[2], unitz[2], 0,\n                0, 0, 0, 1 ];\n        if (center !== undefined) {  // multiply on left by translation by rotationCenter, on right by translation by -rotationCenter\n            var t0 = center[0] - mat[0]*center[0] - mat[4]*center[1] - mat[8]*center[2];\n            var t1 = center[1] - mat[1]*center[0] - mat[5]*center[1] - mat[9]*center[2];\n            var t2 = center[2] - mat[2]*center[0] - mat[6]*center[1] - mat[10]*center[2];\n            mat[12] = t0;\n            mat[13] = t1;\n            mat[14] = t2;\n        }\n        if (viewZ !== undefined) {\n            mat[14] -= viewZ;\n        }\n        return mat;\n    };\n    this.getViewDistance = function() {\n        return viewZ;\n    };\n    this.setViewDistance = function(viewDistance) {\n        viewZ = viewDistance;\n    };\n    this.getRotationCenter = function() {\n        return (center === undefined) ? [0,0,0] : center;\n    };\n    this.setRotationCenter = function(rotationCenter) {\n        center = rotationCenter;\n    };\n    this.setView(viewDistance, viewpointDirection, viewUp);\n    canvas.addEventListener(\"mousedown\", doMouseDown, false);\n    canvas.addEventListener(\"touchstart\", doTouchStart, false);\n    function applyTransvection(e1, e2) {  // rotate vector e1 onto e2\n        function reflectInAxis(axis, source, destination) {\n            var s = 2 * (axis[0] * source[0] + axis[1] * source[1] + axis[2] * source[2]);\n            destination[0] = s*axis[0] - source[0];\n            destination[1] = s*axis[1] - source[1];\n            destination[2] = s*axis[2] - source[2];\n        }\n        normalize(e1,e1);\n        normalize(e2,e2);\n        var e = [0,0,0];\n        add(e,e1,e2);\n        normalize(e,e);\n        var temp = [0,0,0];\n        reflectInAxis(e,unitz,temp);\n        reflectInAxis(e1,temp,unitz);\n        reflectInAxis(e,unitx,temp);\n        reflectInAxis(e1,temp,unitx);\n        reflectInAxis(e,unity,temp);\n        reflectInAxis(e1,temp,unity);\n    }\n    var centerX, centerY, radius2;\n    var prevx,prevy;\n    var dragging = false;\n    function doMouseDown(evt) {\n        if (dragging)\n           return;\n        dragging = true;\n        centerX = canvas.width/2;\n        centerY = canvas.height/2;\n        var radius = Math.min(centerX,centerY);\n        radius2 = radius*radius;\n        document.addEventListener(\"mousemove\", doMouseDrag, false);\n        document.addEventListener(\"mouseup\", doMouseUp, false);\n        var box = canvas.getBoundingClientRect();\n        prevx = evt.clientX - box.left;\n        prevy = evt.clientY - box.top;\n    }\n    function doMouseDrag(evt) {\n        if (!dragging)\n           return;\n        var box = canvas.getBoundingClientRect();\n        var x = evt.clientX - box.left;\n        var y = evt.clientY - box.top;\n        var ray1 = toRay(prevx,prevy);\n        var ray2 = toRay(x,y);\n        applyTransvection(ray1,ray2);\n        prevx = x;\n        prevy = y;\n        if (callback) {\n            callback();\n        }\n    }\n    function doMouseUp(evt) {\n        if (dragging) {\n            document.removeEventListener(\"mousemove\", doMouseDrag, false);\n            document.removeEventListener(\"mouseup\", doMouseUp, false);\n            dragging = false;\n        }\n    }\n    function doTouchStart(evt) {\n        if (evt.touches.length != 1) {\n           doTouchCancel();\n           return;\n        }\n        evt.preventDefault();\n        var r = canvas.getBoundingClientRect();\n        prevx = evt.touches[0].clientX - r.left;\n        prevy = evt.touches[0].clientY - r.top;\n        canvas.addEventListener(\"touchmove\", doTouchMove, false);\n        canvas.addEventListener(\"touchend\", doTouchEnd, false);\n        canvas.addEventListener(\"touchcancel\", doTouchCancel, false);\n        touchStarted = true;\n        centerX = canvas.width/2;\n        centerY = canvas.height/2;\n        var radius = Math.min(centerX,centerY);\n        radius2 = radius*radius;\n    }\n    function doTouchMove(evt) {\n        if (evt.touches.length != 1 || !touchStarted) {\n           doTouchCancel();\n           return;\n        }\n        evt.preventDefault();\n        var r = canvas.getBoundingClientRect();\n        var x = evt.touches[0].clientX - r.left;\n        var y = evt.touches[0].clientY - r.top;\n        var ray1 = toRay(prevx,prevy);\n        var ray2 = toRay(x,y);\n        applyTransvection(ray1,ray2);\n        prevx = x;\n        prevy = y;\n        if (callback) {\n            callback();\n        }\n    }\n    function doTouchEnd(evt) {\n        doTouchCancel();\n    }\n    function doTouchCancel() {\n        if (touchStarted) {\n           touchStarted = false;\n           canvas.removeEventListener(\"touchmove\", doTouchMove, false);\n           canvas.removeEventListener(\"touchend\", doTouchEnd, false);\n           canvas.removeEventListener(\"touchcancel\", doTouchCancel, false);\n        }\n    }\n    function toRay(x,y) {  // converts a point (x,y) in pixel coords to a 3D ray by mapping interior of\n                           // a circle in the plane to a hemisphere with that circle as equator.\n       var dx = x - centerX;\n       var dy = centerY - y;\n       var vx = dx * unitx[0] + dy * unity[0];  // The mouse point as a vector in the image plane.\n       var vy = dx * unitx[1] + dy * unity[1];\n       var vz = dx * unitx[2] + dy * unity[2];\n       var dist2 = vx*vx + vy*vy + vz*vz;\n       if (dist2 > radius2) {  // Map a point ouside the circle to itself\n          return [vx,vy,vz];\n       }\n       else {\n          var z = Math.sqrt(radius2 - dist2);\n          return  [vx+z*unitz[0], vy+z*unitz[1], vz+z*unitz[2]];\n        }\n    }\n    function dot(v,w) {\n        return v[0]*w[0] + v[1]*w[1] + v[2]*w[2];\n    }\n    function length(v) {\n        return Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);\n    }\n    function normalize(v,w) {\n        var d = length(w);\n        v[0] = w[0]/d;\n        v[1] = w[1]/d;\n        v[2] = w[2]/d;\n    }\n    function copy(v,w) {\n        v[0] = w[0];\n        v[1] = w[1];\n        v[2] = w[2];\n    }\n    function add(sum,v,w) {\n        sum[0] = v[0] + w[0];\n        sum[1] = v[1] + w[1];\n        sum[2] = v[2] + w[2];\n    }\n    function subtract(dif,v,w) {\n        dif[0] = v[0] - w[0];\n        dif[1] = v[1] - w[1];\n        dif[2] = v[2] - w[2];\n    }\n    function scale(ans,v,num) {\n        ans[0] = v[0] * num;\n        ans[1] = v[1] * num;\n        ans[2] = v[2] * num;\n    }\n    function cross(c,v,w) {\n        var x = v[1]*w[2] - v[2]*w[1];\n        var y = v[2]*w[0] - v[0]*w[2];\n        var z = v[0]*w[1] - v[1]*w[0];\n        c[0] = x;\n        c[1] = y;\n        c[2] = z;\n    }\n}\n\n\n", "ifs": "\n/**\n * The functions in this file create models in an\n * IFS format that can be drawn using gl.drawElements\n * with primitive type gl.TRIANGLES.  Objects have\n * vertex coordinates, normal vectors, and texture\n * coordinates for each vertex, plus a list of indicies\n * for the element array buffer.  The return value\n * of each function is an object, model, with properties:\n * \n *    model.vertexPositions -- the vertex coordinates;\n *    model.vertexNormals -- the normal vectors;\n *    model.vertexTextureCoords -- the texture coordinates;\n *    model.indices -- the face indices.\n *\n * The first three properties are of type Float32Array, while\n * model.indices is of type Uint16Array.\n *\n */\n\n \n /**\n  * Create a model of a cube, centered at the origin.  (This is not\n  * a particularly good format for a cube, since an IFS representation\n  * has a lot of redundancy.)\n  * @side the length of a side of the cube.  If not given, the value will be 1.\n  */\nfunction cube(side) {\n   var s = (side || 1)/2;\n   var coords = [];\n   var normals = [];\n   var texCoords = [];\n   var indices = [];\n   function face(xyz, nrm) {\n      var start = coords.length/3;\n      var i;\n      for (i = 0; i \u003c 12; i++) {\n         coords.push(xyz[i]);\n      }\n      for (i = 0; i \u003c 4; i++) {\n         normals.push(nrm[0],nrm[1],nrm[2]);\n      }\n      texCoords.push(0,0,1,0,1,1,0,1);\n      indices.push(start,start+1,start+2,start,start+2,start+3);\n   }\n   face( [-s,-s,s, s,-s,s, s,s,s, -s,s,s], [0,0,1] );\n   face( [-s,-s,-s, -s,s,-s, s,s,-s, s,-s,-s], [0,0,-1] );\n   face( [-s,s,-s, -s,s,s, s,s,s, s,s,-s], [0,1,0] );\n   face( [-s,-s,-s, s,-s,-s, s,-s,s, -s,-s,s], [0,-1,0] );\n   face( [s,-s,-s, s,s,-s, s,s,s, s,-s,s], [1,0,0] );\n   face( [-s,-s,-s, -s,-s,s, -s,s,s, -s,s,-s], [-1,0,0] );\n   return {\n      vertexPositions: new Float32Array(coords),\n      vertexNormals: new Float32Array(normals),\n      vertexTextureCoords: new Float32Array(texCoords),\n      indices: new Uint16Array(indices)\n   };\n}\n\n/**\n * Creates a model of an annulus or disk lying in the xy plane,\n * centered at the origin.  (This is not a great representation,\n * since all the normals are the same.)\n * @param innerRadius the radius of the hole in the radius; a value of\n *    zero will give a disk rather than a ring.  If not present,\n *    the default value is 0.25.\n * @param outerRadius the radius of the ring, from the center to teh\n *    outer edge.  Must be greater than innerRadius.  If not provided,\n *    the default value is 2*innerRadius or is 0.5 if innerRadius is 0.\n * @slices the number of radial subdivisions in the circular approximation\n *    of an annulus.  If not provided, the value will be 32.\n */\nfunction ring(innerRadius, outerRadius, slices) {\n   if (arguments.length == 0)\n      innerRadius = 0.25;\n   outerRadius = outerRadius || innerRadius * 2 || 0.5;\n   slices = slices || 32;\n   var vertexCount, vertices, normals, texCoords, indices, i;\n   vertexCount = (innerRadius == 0)? slices + 1 : slices * 2;\n   vertices = new Float32Array( 3*vertexCount );\n   normals = new Float32Array( 3* vertexCount );\n   texCoords = new Float32Array( 2*vertexCount );\n   indices = new Uint16Array( innerRadius == 0 ?  3*slices : 3*2*slices );\n   var d = 2*Math.PI/slices;\n   var k = 0;\n   var t = 0;\n   var n = 0;\n   if (innerRadius == 0) {\n      for (i = 0; i \u003c slices; i++) {\n         c = Math.cos(d*i);\n         s = Math.sin(d*i);\n         vertices[k++] = c*outerRadius;\n         vertices[k++] = s*outerRadius;\n         vertices[k++] = 0;\n         texCoords[t++] = 0.5 + 0.5*c;\n         texCoords[t++] = 0.5 + 0.5*s;\n         indices[n++] = slices;\n         indices[n++] = i;\n         indices[n++] = i == slices-1 ? 0 : i + 1;\n      }\n      vertices[k++] = vertices[k++] = vertices[k++] = 0;\n      texCoords[t++] = texCoords[t++] = 0;\n   }\n   else {\n      var r = innerRadius / outerRadius;\n      for (i = 0; i \u003c slices; i++) {\n         c = Math.cos(d*i);\n         s = Math.sin(d*i);\n         vertices[k++] = c*innerRadius;\n         vertices[k++] = s*innerRadius;\n         vertices[k++] = 0;\n         texCoords[t++] = 0.5 + 0.5*c*r;\n         texCoords[t++] = 0.5 + 0.5*s*r;\n         vertices[k++] = c*outerRadius;\n         vertices[k++] = s*outerRadius;\n         vertices[k++] = 0;\n         texCoords[t++] = 0.5 + 0.5*c;\n         texCoords[t++] = 0.5 + 0.5*s;\n      }\n      for (i = 0; i \u003c slices - 1; i++) {\n         indices[n++] = 2*i;\n         indices[n++] = 2*i+1;\n         indices[n++] = 2*i+3;\n         indices[n++] = 2*i;\n         indices[n++] = 2*i+3;\n         indices[n++] = 2*i+2;\n      }\n      indices[n++] = 2*i;\n      indices[n++] = 2*i+1;\n      indices[n++] = 1;\n      indices[n++] = 2*i;\n      indices[n++] = 1;\n      indices[n++] = 0;\n   }\n   for (i = 0; i \u003c vertexCount; i++) {\n      normals[3*i] = normals[3*i+1] = 0;\n      normals[3*i+2] = 1;\n   }\n   return {\n       vertexPositions: vertices,\n       vertexNormals: normals,\n       vertexTextureCoords: texCoords,\n       indices: indices\n   };\n}\n\n/**\n * Create a model of a sphere.  The z-axis is the axis of the sphere,\n * with the north pole on the positive z-axis and the center at (0,0,0).\n * @param radius the radius of the sphere, default 0.5 if not specified.\n * @param slices the number of lines of longitude, default 32\n * @param stacks the number of lines of latitude plus 1, default 16.  (This \n *    is the number of vertical slices, bounded by lines of latitude, the\n *    north pole and the south pole.)\n */\nfunction uvSphere(radius, slices, stacks) {\n   radius = radius || 0.5;\n   slices = slices || 32;\n   stacks = stacks || 16;\n   var vertexCount = (slices+1)*(stacks+1);\n   var vertices = new Float32Array( 3*vertexCount );\n   var normals = new Float32Array( 3* vertexCount );\n   var texCoords = new Float32Array( 2*vertexCount );\n   var indices = new Uint16Array( 2*slices*stacks*3 );\n   var du = 2*Math.PI/slices;\n   var dv = Math.PI/stacks;\n   var i,j,u,v,x,y,z;\n   var indexV = 0;\n   var indexT = 0;\n   for (i = 0; i \u003c= stacks; i++) {\n      v = -Math.PI/2 + i*dv;\n      for (j = 0; j \u003c= slices; j++) {\n         u = j*du;\n         x = Math.cos(u)*Math.cos(v);\n         y = Math.sin(u)*Math.cos(v);\n         z = Math.sin(v);\n         vertices[indexV] = radius*x;\n         normals[indexV++] = x;\n         vertices[indexV] = radius*y;\n         normals[indexV++] = y;\n         vertices[indexV] = radius*z;\n         normals[indexV++] = z;\n         texCoords[indexT++] = j/slices;\n         texCoords[indexT++] = i/stacks;\n      } \n   }\n   var k = 0;\n   for (j = 0; j \u003c stacks; j++) {\n      var row1 = j*(slices+1);\n      var row2 = (j+1)*(slices+1);\n      for (i = 0; i \u003c slices; i++) {\n          indices[k++] = row1 + i;\n          indices[k++] = row2 + i + 1;\n          indices[k++] = row2 + i;\n          indices[k++] = row1 + i;\n          indices[k++] = row1 + i + 1;\n          indices[k++] = row2 + i + 1;\n      }\n   }\n   return {\n       vertexPositions: vertices,\n       vertexNormals: normals,\n       vertexTextureCoords: texCoords,\n       indices: indices\n   };\n}\n\n\n/**\n * Create a model of a torus (surface of a doughnut).  The z-axis goes through the doughnut hole,\n * and the center of the torus is at (0,0,0).\n * @param outerRadius the distance from the center to the outside of the tube, 0.5 if not specified.\n * @param innerRadius the distance from the center to the inside of the tube, outerRadius/3 if not\n *    specified.  (This is the radius of the doughnut hole.)\n * @param slices the number of lines of longitude, default 32.  These are slices parallel to the\n * z-axis and go around the tube the short way (through the hole).\n * @param stacks the number of lines of latitude plus 1, default 16.  These lines are perpendicular\n * to the z-axis and go around the tube the long way (arouind the hole).\n */\nfunction uvTorus(outerRadius, innerRadius, slices, stacks) {\n   outerRadius = outerRadius || 0.5;\n   innerRadius = innerRadius || outerRadius/3;\n   slices = slices || 32;\n   stacks = stacks || 16;\n   var vertexCount = (slices+1)*(stacks+1);\n   var vertices = new Float32Array( 3*vertexCount );\n   var normals = new Float32Array( 3* vertexCount );\n   var texCoords = new Float32Array( 2*vertexCount );\n   var indices = new Uint16Array( 2*slices*stacks*3 );\n   var du = 2*Math.PI/slices;\n   var dv = 2*Math.PI/stacks;\n   var centerRadius = (innerRadius+outerRadius)/2;\n   var tubeRadius = outerRadius - centerRadius;\n   var i,j,u,v,cx,cy,sin,cos,x,y,z;\n   var indexV = 0;\n   var indexT = 0;\n   for (j = 0; j \u003c= stacks; j++) {\n      v = -Math.PI + j*dv;\n      cos = Math.cos(v);\n      sin = Math.sin(v);\n      for (i = 0; i \u003c= slices; i++) {\n         u = i*du;\n         cx = Math.cos(u);\n         cy = Math.sin(u);\n         x = cx*(centerRadius + tubeRadius*cos);\n         y = cy*(centerRadius + tubeRadius*cos);\n         z = sin*tubeRadius;\n         vertices[indexV] = x;\n         normals[indexV++] = cx*cos;\n         vertices[indexV] = y;\n         normals[indexV++] = cy*cos;\n         vertices[indexV] = z;\n         normals[indexV++] = sin;\n         texCoords[indexT++] = i/slices;\n         texCoords[indexT++] = j/stacks;\n      } \n   }\n   var k = 0;\n   for (j = 0; j \u003c stacks; j++) {\n      var row1 = j*(slices+1);\n      var row2 = (j+1)*(slices+1);\n      for (i = 0; i \u003c slices; i++) {\n          indices[k++] = row1 + i;\n          indices[k++] = row2 + i + 1;\n          indices[k++] = row2 + i;\n          indices[k++] = row1 + i;\n          indices[k++] = row1 + i + 1;\n          indices[k++] = row2 + i + 1;\n      }\n   }\n   return {\n       vertexPositions: vertices,\n       vertexNormals: normals,\n       vertexTextureCoords: texCoords,\n       indices: indices\n   };\n}\n\n/**\n * Defines a model of a cylinder.  The axis of the cylinder is the z-axis,\n * and the center is at (0,0,0).\n * @param radius the radius of the cylinder\n * @param height the height of the cylinder.  The cylinder extends from -height/2\n * to height/2 along the z-axis.\n * @param slices the number of slices, like the slices of an orange.\n * @param noTop if missing or false, the cylinder has a top; if set to true,\n *   the cylinder has a top. The top is a disk at the positive end of the cylinder.\n * @param noBottom if missing or false, the cylinder has a bottom; if set to true,\n *   the cylinder has a bottom. The bottom is a disk at the negtive end of the cylinder.\n */\nfunction uvCylinder(radius, height, slices, noTop, noBottom) {\n   radius = radius || 0.5;\n   height = height || 2*radius;\n   slices = slices || 32;\n   var vertexCount = 2*(slices+1);\n   if (!noTop)\n      vertexCount += slices + 2;\n   if (!noBottom)\n      vertexCount += slices + 2;\n   var triangleCount = 2*slices;\n   if (!noTop)\n      triangleCount += slices;\n   if (!noBottom)\n      triangleCount += slices; \n   var vertices = new Float32Array(vertexCount*3);\n   var normals = new Float32Array(vertexCount*3);\n   var texCoords = new Float32Array(vertexCount*2);\n   var indices = new Uint16Array(triangleCount*3);\n   var du = 2*Math.PI / slices;\n   var kv = 0;\n   var kt = 0;\n   var k = 0;\n   var i,u;\n   for (i = 0; i \u003c= slices; i++) {\n      u = i*du;\n      var c = Math.cos(u);\n      var s = Math.sin(u);\n      vertices[kv] = c*radius;\n      normals[kv++] = c;\n      vertices[kv] = s*radius;\n      normals[kv++] = s;\n      vertices[kv] = -height/2;\n      normals[kv++] = 0;\n      texCoords[kt++] = i/slices;\n      texCoords[kt++] = 0;\n      vertices[kv] = c*radius;\n      normals[kv++] = c;\n      vertices[kv] = s*radius;\n      normals[kv++] = s;\n      vertices[kv] = height/2;\n      normals[kv++] = 0;\n      texCoords[kt++] = i/slices;\n      texCoords[kt++] = 1;\n   }\n   for (i = 0; i \u003c slices; i++) {\n          indices[k++] = 2*i;\n          indices[k++] = 2*i+3;\n          indices[k++] = 2*i+1;\n          indices[k++] = 2*i;\n          indices[k++] = 2*i+2;\n          indices[k++] = 2*i+3;\n   }\n   var startIndex = kv/3;\n   if (!noBottom) {\n      vertices[kv] = 0;\n      normals[kv++] = 0;\n      vertices[kv] = 0;\n      normals[kv++] = 0;\n      vertices[kv] = -height/2;\n      normals[kv++] = -1;\n      texCoords[kt++] = 0.5;\n      texCoords[kt++] = 0.5; \n      for (i = 0; i \u003c= slices; i++) {\n         u = 2*Math.PI - i*du;\n         var c = Math.cos(u);\n         var s = Math.sin(u);\n         vertices[kv] = c*radius;\n         normals[kv++] = 0;\n         vertices[kv] = s*radius;\n         normals[kv++] = 0;\n         vertices[kv] = -height/2;\n         normals[kv++] = -1;\n         texCoords[kt++] = 0.5 - 0.5*c;\n         texCoords[kt++] = 0.5 + 0.5*s;\n      }\n      for (i = 0; i \u003c slices; i++) {\n         indices[k++] = startIndex;\n         indices[k++] = startIndex + i + 1;\n         indices[k++] = startIndex + i + 2;\n      }\n   }\n   var startIndex = kv/3;\n   if (!noTop) {\n      vertices[kv] = 0;\n      normals[kv++] = 0;\n      vertices[kv] = 0;\n      normals[kv++] = 0;\n      vertices[kv] = height/2;\n      normals[kv++] = 1;\n      texCoords[kt++] = 0.5;\n      texCoords[kt++] = 0.5; \n      for (i = 0; i \u003c= slices; i++) {\n         u = i*du;\n         var c = Math.cos(u);\n         var s = Math.sin(u);\n         vertices[kv] = c*radius;\n         normals[kv++] = 0;\n         vertices[kv] = s*radius;\n         normals[kv++] = 0;\n         vertices[kv] = height/2;\n         normals[kv++] = 1;\n         texCoords[kt++] = 0.5 + 0.5*c;\n         texCoords[kt++] = 0.5 + 0.5*s;\n      }\n      for (i = 0; i \u003c slices; i++) {\n         indices[k++] = startIndex;\n         indices[k++] = startIndex + i + 1;\n         indices[k++] = startIndex + i + 2;\n      }\n   }\n   return {\n       vertexPositions: vertices,\n       vertexNormals: normals,\n       vertexTextureCoords: texCoords,\n       indices: indices\n   };\n}\n\n\n/**\n * Defines a model of a cone.  The axis of the cone is the z-axis,\n * and the center is at (0,0,0).\n * @param radius the radius of the cone\n * @param height the height of the cone.  The cone extends from -height/2\n * to height/2 along the z-axis, with the tip at (0,0,height/2).\n * @param slices the number of slices, like the slices of an orange.\n * @param noBottom if missing or false, the cone has a bottom; if set to true,\n *   the cone has a bottom. The bottom is a disk at the wide end of the cone.\n */\nfunction uvCone(radius, height, slices, noBottom) {\n   radius = radius || 0.5;\n   height = height || 2*radius;\n   slices = slices || 32;\n   var fractions = [ 0, 0.5, 0.75, 0.875, 0.9375 ];\n   var vertexCount = fractions.length*(slices+1) + slices;\n   if (!noBottom)\n      vertexCount += slices + 2;\n   var triangleCount = (fractions.length-1)*slices*2 + slices;\n   if (!noBottom)\n      triangleCount += slices;\n   var vertices = new Float32Array(vertexCount*3);\n   var normals = new Float32Array(vertexCount*3);\n   var texCoords = new Float32Array(vertexCount*2);\n   var indices = new Uint16Array(triangleCount*3);\n   var normallength = Math.sqrt(height*height+radius*radius);\n   var n1 = height/normallength;\n   var n2 = radius/normallength; \n   var du = 2*Math.PI / slices;\n   var kv = 0;\n   var kt = 0;\n   var k = 0;\n   var i,j,u;\n   for (j = 0; j \u003c fractions.length; j++) {\n      var uoffset = (j % 2 == 0? 0 : 0.5);\n      for (i = 0; i \u003c= slices; i++) {\n         var h1 = -height/2 + fractions[j]*height;\n         u = (i+uoffset)*du;\n         var c = Math.cos(u);\n         var s = Math.sin(u);\n         vertices[kv] = c*radius*(1-fractions[j]);\n         normals[kv++] = c*n1;\n         vertices[kv] = s*radius*(1-fractions[j]);\n         normals[kv++] = s*n1;\n         vertices[kv] = h1;\n         normals[kv++] = n2;\n         texCoords[kt++] = (i+uoffset)/slices;\n         texCoords[kt++] = fractions[j];\n      }\n   }\n   var k = 0;\n   for (j = 0; j \u003c fractions.length-1; j++) {\n      var row1 = j*(slices+1);\n      var row2 = (j+1)*(slices+1);\n      for (i = 0; i \u003c slices; i++) {\n          indices[k++] = row1 + i;\n          indices[k++] = row2 + i + 1;\n          indices[k++] = row2 + i;\n          indices[k++] = row1 + i;\n          indices[k++] = row1 + i + 1;\n          indices[k++] = row2 + i + 1;\n      }\n   }\n   var start = kv/3 - (slices+1);\n   for (i = 0; i \u003c slices; i++) { // slices points at top, with different normals, texcoords\n      u = (i+0.5)*du;\n      var c = Math.cos(u);\n      var s = Math.sin(u);\n      vertices[kv] = 0;\n      normals[kv++] = c*n1;\n      vertices[kv] = 0;\n      normals[kv++] = s*n1;\n      vertices[kv] = height/2;\n      normals[kv++] = n2;\n      texCoords[kt++] = (i+0.5)/slices;\n      texCoords[kt++] = 1;\n   }\n   for (i = 0; i \u003c slices; i++) {\n      indices[k++] = start+i;\n      indices[k++] = start+i+1;\n      indices[k++] = start+(slices+1)+i;\n   }\n   if (!noBottom) {\n      var startIndex = kv/3;\n      vertices[kv] = 0;\n      normals[kv++] = 0;\n      vertices[kv] = 0;\n      normals[kv++] = 0;\n      vertices[kv] = -height/2;\n      normals[kv++] = -1;\n      texCoords[kt++] = 0.5;\n      texCoords[kt++] = 0.5; \n      for (i = 0; i \u003c= slices; i++) {\n         u = 2*Math.PI - i*du;\n         var c = Math.cos(u);\n         var s = Math.sin(u);\n         vertices[kv] = c*radius;\n         normals[kv++] = 0;\n         vertices[kv] = s*radius;\n         normals[kv++] = 0;\n         vertices[kv] = -height/2;\n         normals[kv++] = -1;\n         texCoords[kt++] = 0.5 - 0.5*c;\n         texCoords[kt++] = 0.5 + 0.5*s;\n      }\n      for (i = 0; i \u003c slices; i++) {\n         indices[k++] = startIndex;\n         indices[k++] = startIndex + i + 1;\n         indices[k++] = startIndex + i + 2;\n      }\n   } \n   return {\n       vertexPositions: vertices,\n       vertexNormals: normals,\n       vertexTextureCoords: texCoords,\n       indices: indices\n   };   \n}\n\n", "tpl32": "\u003c!DOCTYPE html>\n\u003chtml>\u003chead>\u003cmeta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n\n\n\u003ctitle>Can we do Cell Shading\u003c/title>\n\u003cstyle>\n    body {\n        background-color: #EEEEEE;\n    }\n    label {\n        white-space: pre;\n    }\n\u003c/style>\n\n\u003c!--\n    Shows objects using simple lighting, with diffuse and\n    specular color and a single white light.\n-->\n\n\n\u003cscript src=\"gl-matrix-min.js.download\">\u003c/script>\n\u003cscript src=\"trackball-rotator.js.download\">\u003c/script>\n\u003cscript src=\"basic-object-models-IFS.js.download\">\u003c/script>\n\u003cscript>\n\n\"use strict\";\n\nconst vertexShaderSource = `\n    attribute vec3 a_coords;\n    attribute vec3 a_normal;\n    uniform mat4 modelview;\n    uniform mat4 projection;\n    uniform mat3 normalMatrix;\n    uniform vec4 lightPosition;\n    uniform vec4 diffuseColor;\n    uniform vec3 specularColor;\n    uniform float specularExponent;\n    varying vec4 v_color;\n    void main() {\n        // Implement Lambert Shading\n    }`;\n\nconst fragmentShaderSource = `\n#ifdef GL_FRAGMENT_PRECISION_HIGH\n       precision highp float;\n    #else\n       precision mediump float;\n    #endif\n    varying vec4 v_color;\n\n    // Additional uniforms for cell shading\n    uniform float cellSize;\n\n    void main() {\n\n        // Quantize the light intensity based on the cell size\n \n    }`;\n\n\nlet gl;   // The webgl context.\n\nlet a_coords_loc;       // Location of the a_coords attribute variable in the shader program.\nlet a_coords_buffer;    // Buffer to hold the values for a_coords.\nlet a_normal_loc;       // Location of a_normal attribute.\nlet a_normal_buffer;    // Buffer for a_normal.\nlet index_buffer;       // Buffer to hold vetex indices from model.\n\nlet u_diffuseColor;     // Locations of uniform variables in the shader program\nlet u_specularColor;\nlet u_specularExponent;\nlet u_lightPosition;\nlet u_modelview;\nlet u_projection;\nlet u_normalMatrix;    \nlet u_cellSize;\n\n\nconst projection = mat4.create();    // projection matrix\nlet modelview;                       // modelview matrix; value comes from rotator\nconst normalMatrix = mat3.create();  // matrix, derived from modelview matrix, for transforming normal vectors\n\nlet rotator;  // A TrackballRotator to implement rotation by mouse.\n\nconst colors = [  // RGB color arrays for diffuse and specular color values, selected by popup menu\n    [1,1,1], [1,0,0], [0,1,0], [0,0,1], [0,1,1], [1,0,1], [1,1,0], [0,0,0], [0.5,0.5,0.5]\n];\n\nconst lightPositions = [  // values for light position, selected by popup menu\n    [0,0,0,1], [0,0,1,0], [0,1,0,0], [0,0,-10,1], [2,3,5,0]\n];\n\nconst objects = [  // Objects for display, selected by popup menu\n    cube(5),\n    uvTorus(3,1,64,32),\n    uvCylinder(1.5,5.5),\n    uvCone(2.5,5.5),\n    uvSphere(3),\n    uvSphere(3,12,6)\n];\n\nlet currentModelNumber;  // contains data for the current object\n\n\nfunction draw() { \n    gl.clearColor(0.15,0.15,0.3,1);\n    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);\n    \n    mat4.perspective(projection,Math.PI/5,1,10,20);\n    \n    modelview = rotator.getViewMatrix();\n    \n    if (currentModelNumber > 1) {\n        mat4.rotateX(modelview,modelview,-Math.PI/2);\n    }\n    \n    \n    /* Get the matrix for transforming normal vectors from the modelview matrix,\n       and send matrices to the shader program*/\n    \n    mat3.normalFromMat4(normalMatrix, modelview);\n    \n    gl.uniformMatrix3fv(u_normalMatrix, false, normalMatrix);\n    gl.uniformMatrix4fv(u_modelview, false, modelview );\n    gl.uniformMatrix4fv(u_projection, false, projection );\n    \n    /* Draw the model.  The data for the model was set up in installModel() */\n   \n    gl.drawElements(gl.TRIANGLES, objects[currentModelNumber].indices.length, gl.UNSIGNED_SHORT, 0);\n\n}\n\n\n/* Called when the user changes the selection in the model-selection pop-up.\n * The data for the model are copied into the appropriate buffers, and the\n * scene is redrawn.\n */\nfunction installModel(modelData) {\n     gl.bindBuffer(gl.ARRAY_BUFFER, a_coords_buffer);\n     gl.bufferData(gl.ARRAY_BUFFER, modelData.vertexPositions, gl.STATIC_DRAW);\n     gl.vertexAttribPointer(a_coords_loc, 3, gl.FLOAT, false, 0, 0);\n     gl.enableVertexAttribArray(a_coords_loc);\n     gl.bindBuffer(gl.ARRAY_BUFFER, a_normal_buffer);\n     gl.bufferData(gl.ARRAY_BUFFER, modelData.vertexNormals, gl.STATIC_DRAW);\n     gl.vertexAttribPointer(a_normal_loc, 3, gl.FLOAT, false, 0, 0);\n     gl.enableVertexAttribArray(a_normal_loc);\n     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,index_buffer);\n     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, modelData.indices, gl.STATIC_DRAW);\n}\n\n\n/* Initialize the WebGL context.  Called from init() */\nfunction initGL() {\n    let prog = createProgram( gl, vertexShaderSource, fragmentShaderSource );\n    gl.useProgram(prog);\n    a_coords_loc =  gl.getAttribLocation(prog, \"a_coords\");\n    a_normal_loc =  gl.getAttribLocation(prog, \"a_normal\");\n    u_modelview = gl.getUniformLocation(prog, \"modelview\");\n    u_projection = gl.getUniformLocation(prog, \"projection\");\n    u_normalMatrix =  gl.getUniformLocation(prog, \"normalMatrix\");\n    u_lightPosition=  gl.getUniformLocation(prog, \"lightPosition\");\n    u_diffuseColor =  gl.getUniformLocation(prog, \"diffuseColor\");\n    u_specularColor =  gl.getUniformLocation(prog, \"specularColor\");\n    u_specularExponent = gl.getUniformLocation(prog, \"specularExponent\");\n\n    u_cellSize = gl.getUniformLocation(prog, \"cellSize\");\n\n    a_coords_buffer = gl.createBuffer();\n    a_normal_buffer = gl.createBuffer();\n    index_buffer = gl.createBuffer();\n    gl.enable(gl.DEPTH_TEST);\n    gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);\n    gl.uniform4f(u_diffuseColor, 1, 1, 1, 1);\n    gl.uniform1f(u_specularExponent, 10);\n    gl.uniform4f(u_lightPosition, 0, 0, 0, 1);\n    gl.uniform1f(u_cellSize, 3);\n}\n\n/* Creates a program for use in the WebGL context gl, and returns the\n * identifier for that program.  If an error occurs while compiling or\n * linking the program, an exception of type Error is thrown.  The error\n * string contains the compilation or linking error.  If no error occurs,\n * the program identifier is the return value of the function.\n *    The second and third parameters are strings that contain the\n * source code for the vertex shader and for the fragment shader.\n */\nfunction createProgram(gl, vShader, fShader) {\n    let vsh = gl.createShader( gl.VERTEX_SHADER );\n    gl.shaderSource(vsh,vShader);\n    gl.compileShader(vsh);\n    if ( ! gl.getShaderParameter(vsh, gl.COMPILE_STATUS) ) {\n        throw new Error(\"Error in vertex shader:  \" + gl.getShaderInfoLog(vsh));\n     }\n    let fsh = gl.createShader( gl.FRAGMENT_SHADER );\n    gl.shaderSource(fsh, fShader);\n    gl.compileShader(fsh);\n    if ( ! gl.getShaderParameter(fsh, gl.COMPILE_STATUS) ) {\n       throw new Error(\"Error in fragment shader:  \" + gl.getShaderInfoLog(fsh));\n    }\n    let prog = gl.createProgram();\n    gl.attachShader(prog,vsh);\n    gl.attachShader(prog, fsh);\n    gl.linkProgram(prog);\n    if ( ! gl.getProgramParameter( prog, gl.LINK_STATUS) ) {\n       throw new Error(\"Link error in program:  \" + gl.getProgramInfoLog(prog));\n    }\n    return prog;\n}\n\n/**\n * initialization function that will be called when the page has loaded\n */\nfunction init() {\n    let canvas;\n    try {\n        canvas = document.getElementById(\"webglcanvas\");\n        gl = canvas.getContext(\"webgl\");\n        if ( ! gl ) {\n            throw \"Browser does not support WebGL\";\n        }\n    }\n    catch (e) {\n        document.getElementById(\"canvas-holder\").innerHTML =\n            \"\u003cp>Sorry, could not get a WebGL graphics context.\u003c/p>\";\n        return;\n    }\n    try {\n        initGL();  // initialize the WebGL graphics context\n    }\n    catch (e) {\n        document.getElementById(\"canvas-holder\").innerHTML =\n            \"\u003cp>Sorry, could not initialize the WebGL graphics context: \" + e.message + \"\u003c/p>\";\n        return;\n    }\n    document.getElementById(\"object\").value = \"1\";\n    document.getElementById(\"light\").value = \"0\";\n    document.getElementById(\"diffuse\").value = \"0\";\n    document.getElementById(\"specular\").value = \"8\";\n    document.getElementById(\"exponent\").value = \"10\";\n    document.getElementById(\"cellsize\").value = \"3\";\n    document.getElementById(\"object\").onchange = function() {\n        let val = Number(this.value);\n        currentModelNumber = val;\n        installModel(objects[val]); \n        draw();\n    };\n    document.getElementById(\"light\").onchange = function() {\n        let val = Number(this.value);\n        gl.uniform4fv(u_lightPosition, lightPositions[val]);\n        draw();\n    };\n    document.getElementById(\"diffuse\").onchange = function() {\n        let val = Number(this.value);\n        let c = colors[val];\n        gl.uniform4f(u_diffuseColor, c[0], c[1], c[2], 1);\n        draw();\n        console.log(\"Diffuse: \" + c);\n    };\n    document.getElementById(\"specular\").onchange = function() {\n        let val = Number(this.value);\n        gl.uniform3fv(u_specularColor, colors[val]);\n        draw();\n        console.log(\"Specular: \" + colors[val]);\n    };\n    document.getElementById(\"exponent\").onchange = function() {\n        let val = Number(this.value);\n        gl.uniform1f(u_specularExponent, val);\n        draw();\n    };\n    document.getElementById(\"cellsize\").onchange = function() {\n        let val = Number(this.value);\n        gl.uniform1f(u_cellSize, val);\n        draw();\n    };\n    document.getElementById(\"reset\").onclick = function() {\n        rotator.setView(15);\n        draw();\n    };\n    installModel(objects[1]);\n    currentModelNumber = 1;\n    rotator = new TrackballRotator(canvas, draw, 15);\n    draw();\n}\n\n\nwindow.onload = init;\n\n\u003c/script>\n\u003c/head>\n\u003cbody>\n\n\u003ch2>Can we do Cell Shading\u003c/h2>\n\n\u003cp id=\"message\">Drag your mouse, or finger on touchscreen, on the object to rotate it.\n  \u003cbutton id=\"reset\">Reset Rotation\u003c/button>\u003c/p>\n\n\u003cp style=\"width:600px; text-align: center;\">\n\u003clabel>\u003cb>Object:\u003c/b> \u003cselect id=\"object\">\n    \u003coption value=\"0\">Cube\u003c/option>\n    \u003coption value=\"1\">Torus\u003c/option>\n    \u003coption value=\"2\">Cylinder\u003c/option>\n    \u003coption value=\"3\">Cone\u003c/option>\n    \u003coption value=\"4\">Sphere\u003c/option>\n    \u003coption value=\"5\">Rough Sphere\u003c/option>\n\u003c/select>\u003c/label>\u003cbr>\n\u003clabel>\u003cb>Light Position:\u003c/b> \u003cselect id=\"light\">\n    \u003coption value=\"0\">[0,0,0,1] (Viewpoint light)\u003c/option>\n    \u003coption value=\"1\">[0,0,1,0] (Directional, into screen)\u003c/option>\n    \u003coption value=\"2\">[0,1,0,0] (Directional, from above)\u003c/option>\n    \u003coption value=\"3\">[0,0,-10,1] (On z-axis, close to object)\u003c/option>\n    \u003coption value=\"4\">[2,3,5,0] (Directional from upper right)\u003c/option>\n\u003c/select>\u003c/label>\u003cbr>\n\u003clabel>\u003cb>Diffuse Color:\u003c/b> \u003cselect id=\"diffuse\">\n    \u003coption value=\"0\">White\u003c/option>\n    \u003coption value=\"1\">Red\u003c/option>\n    \u003coption value=\"2\">Green\u003c/option>\n    \u003coption value=\"3\">Blue\u003c/option>\n    \u003coption value=\"4\">Cyan\u003c/option>\n    \u003coption value=\"5\">Magenta\u003c/option>\n    \u003coption value=\"6\">Yellow\u003c/option>\n    \u003coption value=\"7\">Black\u003c/option>\n\u003c/select>\u003c/label>\u003cbr>\n\u003clabel>\u003cb>Specular Color:\u003c/b> \u003cselect id=\"specular\">\n    \u003coption value=\"0\">White\u003c/option>\n    \u003coption value=\"1\">Red\u003c/option>\n    \u003coption value=\"2\">Green\u003c/option>\n    \u003coption value=\"3\">Blue\u003c/option>\n    \u003coption value=\"4\">Cyan\u003c/option>\n    \u003coption value=\"5\">Magenta\u003c/option>\n    \u003coption value=\"6\">Yellow\u003c/option>\n    \u003coption value=\"8\">Gray\u003c/option>\n    \u003coption value=\"7\">Black\u003c/option>\n\u003c/select>\u003c/label>\n\u003clabel>\u003cb>Specular Exponent:\u003c/b> \u003cselect id=\"exponent\">\n    \u003coption>0\u003c/option>\n    \u003coption>1\u003c/option>\n    \u003coption>2\u003c/option>\n    \u003coption>5\u003c/option>\n    \u003coption>10\u003c/option>\n    \u003coption>20\u003c/option>\n    \u003coption>50\u003c/option>\n    \u003coption>100\u003c/option>\n\u003c/select>\u003c/label>\n\u003clabel>\u003cb>cellSize:\u003c/b> \u003cselect id=\"cellsize\">\n    \u003coption>1\u003c/option>\n    \u003coption>2\u003c/option>\n    \u003coption>3\u003c/option>\n    \u003coption>4\u003c/option>\n    \u003coption>5\u003c/option>\n    \u003coption>10\u003c/option>\n    \u003coption>20\u003c/option>\n    \u003coption>50\u003c/option>\n\u003c/select>\u003c/label>\n\u003c/p>\n\n\u003cnoscript>\u003chr>\u003ch3>This page requires Javascript and a web browser that supports WebGL\u003c/h3>\u003chr>\u003c/noscript>\n\n\u003cdiv id=\"canvas-holder\">\n   \u003ccanvas width=\"600\" height=\"600\" id=\"webglcanvas\" style=\"background-color:red\">\u003c/canvas>\n\u003c/div>\n\n\n\n\n\n\u003c/body>\u003c/html>", "v32tpl": "    attribute vec3 a_coords;\n    attribute vec3 a_normal;\n    uniform mat4 modelview;\n    uniform mat4 projection;\n    uniform mat3 normalMatrix;\n    uniform vec4 lightPosition;\n    uniform vec4 diffuseColor;\n    uniform vec3 specularColor;\n    uniform float specularExponent;\n    varying vec4 v_color;\n    void main() {\n        // Implement Lambert Shading\n    }", "f32tpl": "#ifdef GL_FRAGMENT_PRECISION_HIGH\n       precision highp float;\n    #else\n       precision mediump float;\n    #endif\n    varying vec4 v_color;\n\n    // Additional uniforms for cell shading\n    uniform float cellSize;\n\n    void main() {\n\n        // Quantize the light intensity based on the cell size\n \n    }"};
+const $ = id => document.getElementById(id);
+
+/* ================= GLSL templates (same as the Shdr editor) ================= */
+const VS_BASE =
+`precision highp float;
+attribute vec3 position;
+attribute vec3 normal;
+uniform mat3 normalMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+varying vec3 fNormal;
+varying vec3 fPosition;
+
+void main()
+{
+  fNormal = normalize(normalMatrix * normal);
+  vec4 pos = modelViewMatrix * vec4(position, 1.0);
+  fPosition = pos.xyz;
+  gl_Position = projectionMatrix * pos;
+}
+`;
+const FS_BASE =
+`precision highp float;
+uniform float time;
+uniform vec2 resolution;
+varying vec3 fPosition;
+varying vec3 fNormal;
+
+void main()
+{
+  gl_FragColor = vec4(fNormal, 1.0);
+}
+`;
+const VS_MODEL =
+`precision highp float;
+attribute vec3 position;
+attribute vec3 normal;
+uniform mat3 normalMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform float time;
+varying vec3 fNormal;
+varying vec3 fPosition;
+varying vec3 fModelPos;   // model-space position
+
+void main()
+{
+  fModelPos = position;
+  fNormal = normalize(normalMatrix * normal);
+  vec4 pos = modelViewMatrix * vec4(position, 1.0);
+  fPosition = pos.xyz;
+  gl_Position = projectionMatrix * pos;
+}
+`;
+const FS_HEAD = `precision highp float;
+uniform float time;
+varying vec3 fPosition;
+varying vec3 fNormal;
+`;
+const LIGHT = `  vec3 N = normalize(fNormal);
+  vec3 L = normalize(vec3(1.0, 1.0, 1.0));
+  float diff = max(dot(N, L), 0.0);
+`;
+const NOISE_FN = `float hash(vec3 p)
+{
+  return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+}
+
+float noise(vec3 p)
+{
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hash(i + vec3(0.0,0.0,0.0)), hash(i + vec3(1.0,0.0,0.0)), f.x),
+                 mix(hash(i + vec3(0.0,1.0,0.0)), hash(i + vec3(1.0,1.0,0.0)), f.x), f.y),
+             mix(mix(hash(i + vec3(0.0,0.0,1.0)), hash(i + vec3(1.0,0.0,1.0)), f.x),
+                 mix(hash(i + vec3(0.0,1.0,1.0)), hash(i + vec3(1.0,1.0,1.0)), f.x), f.y), f.z);
+}
+`;
+const fs = body => FS_HEAD + "\nvoid main()\n{\n" + body + "}\n";
+const fsM = (body, pre="") => FS_HEAD + "varying vec3 fModelPos;\n" + (pre ? "\n" + pre : "") + "\nvoid main()\n{\n" + body + "}\n";
+const wavyVS = (amp, freq, speed) => VS_MODEL.replace("  fModelPos = position;",
+`  float wave = sin(position.y * ${freq} + time * ${speed});
+  vec3 p = position + normal * ${amp} * wave;
+  fModelPos = position;`).replace("vec4(position, 1.0)", "vec4(p, 1.0)");
+
+/* ================= Lessons ================= */
+const GYM = [
+{ id:"red", title:"Hello, fragment shader", edit:"F",
+  concept:`<p>The <b>fragment shader</b> runs once for every pixel the model covers. Its only job is to set <code>gl_FragColor</code>, a <code>vec4</code> of red, green, blue, alpha, each from 0.0 to 1.0.</p>
+<pre><code>gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // red</code></pre>
+<p>GLSL is strict about numbers: write <code>1.0</code>, never <code>1</code>. An integer where a float is expected is a compile error.</p>`,
+  task:`<p>Make the whole model solid <b>red</b>. This is Example 1 in the course notes (10.8.7).</p>`,
+  hints:["Only the line inside main() needs to change.","gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);"],
+  tip:"A flat colour hides the shape completely. That is why every later lesson adds lighting.",
+  vs:VS_BASE, fs:FS_BASE, sol:{vs:VS_BASE, fs:fs("  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n")} },
+
+{ id:"normals", title:"Normals as colour", edit:"F",
+  concept:`<p>A <b>normal</b> is the direction a surface faces, a <code>vec3</code> with length 1. Its parts run from -1 to 1, but colours only show 0 to 1, so negative parts come out black.</p>
+<p>The standard fix maps -1..1 into 0..1:</p>
+<pre><code>vec3 c = normalize(fNormal) * 0.5 + 0.5;</code></pre>
+<p><code>fNormal</code> is a <b>varying</b>: the vertex shader writes it per vertex, the GPU blends it across each triangle, and the fragment shader reads the blended value. Re-normalize it, because blending shortens it.</p>`,
+  task:`<p>Colour the model by its normal with <b>no black areas</b>: map the normal to 0..1 and output it with alpha 1.0.</p>`,
+  hints:["Make a vec3: normalize(fNormal) * 0.5 + 0.5","gl_FragColor needs 4 numbers: vec4(c, 1.0)"],
+  tip:"Test favourite: this one line proves you understand varyings and value ranges.",
+  vs:VS_BASE, fs:FS_BASE, sol:{vs:VS_BASE, fs:fs("  vec3 c = normalize(fNormal) * 0.5 + 0.5;\n  gl_FragColor = vec4(c, 1.0);\n")} },
+
+{ id:"varying", title:"Your own varying (Direction shader)", edit:"V",
+  concept:`<p>You can send <b>any</b> value from the vertex shader to the fragment shader by declaring a varying with the <b>same name and type in both</b>.</p>
+<pre><code>// in BOTH shaders, above main()
+varying vec3 fColour;</code></pre>
+<p>This is Example 2 in the notes. The vertex shader computes <code>fColour = pos.xyz * fNormal;</code> and the fragment shader just outputs it. <code>pos</code> is the eye-space position computed in the template.</p>`,
+  task:`<p>In the <b>vertex</b> shader: declare <code>varying vec3 fColour;</code> and set <code>fColour = pos.xyz * fNormal;</code> after <code>pos</code> is computed.</p><p>In the <b>fragment</b> shader: declare the same varying and output <code>vec4(fColour, 1.0)</code>.</p>`,
+  hints:["The line fColour = pos.xyz * fNormal; must come AFTER the line that creates pos.","Mismatched varying names give a link error. Copy the declaration line exactly into both files.","Fragment: gl_FragColor = vec4(fColour, 1.0);"],
+  tip:"Use the vertex.glsl / fragment.glsl tabs above the editor to switch files.",
+  vs:VS_BASE, fs:FS_BASE,
+  sol:{vs:VS_BASE.replace("varying vec3 fPosition;","varying vec3 fPosition;\nvarying vec3 fColour;").replace("  fPosition = pos.xyz;","  fPosition = pos.xyz;\n  fColour = pos.xyz * fNormal;"),
+       fs:`precision highp float;\nvarying vec3 fColour;\n\nvoid main()\n{\n  gl_FragColor = vec4(fColour, 1.0);\n}\n`} },
+
+{ id:"cel", title:"Cel shading with floor()", edit:"F",
+  concept:`<p><code>floor(x)</code> rounds down. Divide by a step size, floor, multiply back, and a smooth value snaps to a few flat levels:</p>
+<pre><code>float stepSize = 1.0 / 4.0;
+float r = floor(c.r / stepSize) * stepSize;</code></pre>
+<p>GLSL functions work on whole vectors too, so one line does all three channels: <code>floor(c / stepSize) * stepSize</code>.</p>`,
+  task:`<p>Start from the normal colour <code>normalize(fNormal) * 0.5 + 0.5</code> and quantize it into <b>4 levels</b> (step size 1.0 / 4.0).</p>`,
+  hints:["vec3 c = normalize(fNormal) * 0.5 + 0.5;","vec3 q = floor(c / stepSize) * stepSize;"],
+  tip:"This is Example 3 in the notes. The course applies it to fColour; the maths is identical.",
+  vs:VS_BASE, fs:fs("  vec3 c = normalize(fNormal) * 0.5 + 0.5;\n  gl_FragColor = vec4(c, 1.0);\n"),
+  sol:{vs:VS_BASE, fs:fs("  vec3 c = normalize(fNormal) * 0.5 + 0.5;\n  float stepSize = 1.0 / 4.0;\n  vec3 q = floor(c / stepSize) * stepSize;\n  gl_FragColor = vec4(q, 1.0);\n")} },
+
+{ id:"pulse", title:"Animate colour with time", edit:"F",
+  concept:`<p><code>time</code> is a <b>uniform</b>: one value for the whole draw, updated by the program every frame (seconds since start). It must be declared: <code>uniform float time;</code></p>
+<p><code>sin(time)</code> swings between -1 and 1. The trick <code>sin(time) * 0.5 + 0.5</code> turns that into 0..1, which is perfect for fading.</p>`,
+  task:`<p>Take the normal colour and multiply it by <code>sin(time) * 0.5 + 0.5</code> so the model fades to black and back.</p>`,
+  hints:["float t = sin(time) * 0.5 + 0.5;","gl_FragColor = vec4(c * t, 1.0);"],
+  tip:"The notes write fColour * sin(time) * 10.0, which goes negative half the time. Know both, use the 0..1 version.",
+  vs:VS_BASE, fs:fs("  vec3 c = normalize(fNormal) * 0.5 + 0.5;\n  gl_FragColor = vec4(c, 1.0);\n"),
+  sol:{vs:VS_BASE, fs:fs("  vec3 c = normalize(fNormal) * 0.5 + 0.5;\n  float t = sin(time) * 0.5 + 0.5;\n  gl_FragColor = vec4(c * t, 1.0);\n")} },
+
+{ id:"squash", title:"Animate the shape", edit:"V",
+  concept:`<p>The <b>vertex shader</b> decides where each vertex goes, so changing positions there changes the shape. Example 5 in the notes squashes the model along x:</p>
+<pre><code>pos.x = pos.x * sin(time);</code></pre>
+<p>To use <code>time</code> in the vertex shader it must be declared <b>there too</b>: <code>uniform float time;</code>. Each shader has its own declarations.</p>`,
+  task:`<p>In the vertex shader, declare <code>uniform float time;</code> and add <code>pos.x = pos.x * sin(time);</code> after <code>pos</code> is computed but <b>before</b> <code>gl_Position</code> is set.</p>`,
+  hints:["Order matters: compute pos, change pos.x, then gl_Position = projectionMatrix * pos;","Forgetting the declaration gives: undeclared identifier 'time'."],
+  tip:"Cleaner alternative: change the model-space position first (vec3 p = position; p.x *= sin(time);) so the effect turns with the model.",
+  vs:VS_BASE, fs:fs("  vec3 c = normalize(fNormal) * 0.5 + 0.5;\n  gl_FragColor = vec4(c, 1.0);\n"),
+  sol:{vs:VS_BASE.replace("uniform mat4 projectionMatrix;","uniform mat4 projectionMatrix;\nuniform float time;").replace("  fPosition = pos.xyz;","  pos.x = pos.x * sin(time);\n  fPosition = pos.xyz;"),
+       fs:fs("  vec3 c = normalize(fNormal) * 0.5 + 0.5;\n  gl_FragColor = vec4(c, 1.0);\n")} },
+
+{ id:"diffuse", title:"Diffuse (Lambert) lighting", edit:"F",
+  concept:`<p>A surface is brightest when it faces the light. <code>dot(N, L)</code> measures exactly that: 1 when facing it, 0 side-on, negative facing away.</p>
+<pre><code>vec3 N = normalize(fNormal);
+vec3 L = normalize(vec3(1.0, 1.0, 1.0)); // towards the light
+float diff = max(dot(N, L), 0.0);         // no negatives</code></pre>
+<p>Add a little <b>ambient</b> light so the dark side is not pure black: <code>base * (0.15 + 0.85 * diff)</code>.</p>`,
+  task:`<p>Light a <b>blue</b> model <code>vec3(0.2, 0.5, 1.0)</code> with a light from <code>(1.0, 1.0, 1.0)</code>, using ambient 0.15 and diffuse 0.85.</p>`,
+  hints:["Copy the three lines from the concept box.","vec3 colour = base * (0.15 + 0.85 * diff);"],
+  tip:"Every material question in the test starts with these three lines.",
+  vs:VS_BASE, fs:FS_BASE,
+  sol:{vs:VS_BASE, fs:fs(LIGHT+"  vec3 base = vec3(0.2, 0.5, 1.0);\n  vec3 colour = base * (0.15 + 0.85 * diff);\n  gl_FragColor = vec4(colour, 1.0);\n")} },
+
+{ id:"specular", title:"Specular highlight (Phong)", edit:"F",
+  concept:`<p>Shiny things show a bright spot where light bounces straight into the camera. In eye space the camera sits at (0,0,0), so:</p>
+<pre><code>vec3 V = normalize(-fPosition);   // towards the camera
+vec3 R = reflect(-L, N);          // light bounced off the surface
+float spec = pow(max(dot(R, V), 0.0), shininess);</code></pre>
+<p>Higher <code>shininess</code> means a smaller, sharper spot. Computing this per pixel is <b>Phong shading</b>; per vertex it looks blotchy because lighting is not linear.</p>`,
+  task:`<p>Start from the diffuse blue model and add a <b>white</b> highlight with <code>shininess = 32.0</code>.</p>`,
+  hints:["colour = base * (0.15 + 0.85 * diff) + vec3(1.0) * spec;","The notes write R = -reflect(L, N); it is the same vector."],
+  tip:"Theory question: why per-fragment beats per-vertex? Interpolating corner results misses highlights inside triangles.",
+  vs:VS_BASE, fs:fs(LIGHT+"  vec3 base = vec3(0.2, 0.5, 1.0);\n  vec3 colour = base * (0.15 + 0.85 * diff);\n  gl_FragColor = vec4(colour, 1.0);\n"),
+  sol:{vs:VS_BASE, fs:fs(LIGHT+"  vec3 V = normalize(-fPosition);\n  vec3 R = reflect(-L, N);\n  float spec = pow(max(dot(R, V), 0.0), 32.0);\n  vec3 base = vec3(0.2, 0.5, 1.0);\n  vec3 colour = base * (0.15 + 0.85 * diff) + vec3(1.0) * spec;\n  gl_FragColor = vec4(colour, 1.0);\n")} },
+
+{ id:"rim", title:"Rim light (glowing edges)", edit:"F",
+  concept:`<p>At the silhouette the surface turns away from the camera, so <code>dot(N, V)</code> drops to 0. Flip it and you get a value that is 1 at the edges:</p>
+<pre><code>float rim = 1.0 - max(dot(N, V), 0.0);
+rim = pow(rim, 3.0);   // bigger power = thinner glow</code></pre>
+<p>This one value is behind ice, glass, ghost and slime looks.</p>`,
+  task:`<p>Dark blue diffuse model <code>vec3(0.1, 0.2, 0.4)</code> (ambient 0.15, diffuse 0.85) plus a rim glow of colour <code>vec3(0.6, 0.9, 1.0)</code> with power 3.0.</p>`,
+  hints:["You need V = normalize(-fPosition);","colour = base * (0.15 + 0.85 * diff) + vec3(0.6, 0.9, 1.0) * rim;"],
+  tip:"Turn the model with the mouse: the glow stays on the outline because it depends on the view direction.",
+  vs:VS_BASE, fs:fs(LIGHT+"  vec3 base = vec3(0.1, 0.2, 0.4);\n  vec3 colour = base * (0.15 + 0.85 * diff);\n  gl_FragColor = vec4(colour, 1.0);\n"),
+  sol:{vs:VS_BASE, fs:fs(LIGHT+"  vec3 V = normalize(-fPosition);\n  float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0);\n  vec3 base = vec3(0.1, 0.2, 0.4);\n  vec3 colour = base * (0.15 + 0.85 * diff) + vec3(0.6, 0.9, 1.0) * rim;\n  gl_FragColor = vec4(colour, 1.0);\n")} },
+
+{ id:"gold", title:"Material: gold", edit:"F",
+  concept:`<p>Every material is one recipe with different numbers: <code>colour = base * (ambient + diff) + specCol * spec + rimCol * rim</code>.</p>
+<p>Metals tint their highlight with their own colour; plastics have a white highlight; rubber has almost none.</p>
+<pre><code>base      (1.0, 0.76, 0.33)
+specCol   (1.0, 0.85, 0.5)
+shininess 60.0
+rimCol    (0.4, 0.3, 0.1)
+ambient   0.2</code></pre>`,
+  task:`<p>Build the full recipe with the <b>gold</b> numbers above. Light from <code>(1,1,1)</code>, rim power 3.0.</p>`,
+  hints:["You need N, L, V, R, diff, spec and rim, all from earlier lessons.","colour = base * (0.2 + diff) + specCol * spec + rimCol * rim;"],
+  tip:"Swap in other numbers for rubber (dark, shininess 4), plastic (white highlight) or ice (pale blue, strong rim).",
+  vs:VS_BASE, fs:FS_BASE,
+  sol:{vs:VS_BASE, fs:fs(LIGHT+"  vec3 V = normalize(-fPosition);\n  vec3 R = reflect(-L, N);\n  float spec = pow(max(dot(R, V), 0.0), 60.0);\n  float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0);\n  vec3 base = vec3(1.0, 0.76, 0.33);\n  vec3 specCol = vec3(1.0, 0.85, 0.5);\n  vec3 rimCol = vec3(0.4, 0.3, 0.1);\n  vec3 colour = base * (0.2 + diff) + specCol * spec + rimCol * rim;\n  gl_FragColor = vec4(colour, 1.0);\n")} },
+
+{ id:"toon", title:"Toon lighting", edit:"F",
+  concept:`<p>Combine Lesson 4 and Lesson 7: snap the <b>diffuse amount</b> into a few levels instead of the colour.</p>
+<pre><code>float levels = 3.0;
+float toon = floor(diff * levels) / levels;</code></pre>`,
+  task:`<p>Orange model <code>vec3(1.0, 0.4, 0.2)</code> lit with 3 toon levels: <code>base * (0.25 + toon)</code>.</p>`,
+  hints:["Compute diff first, then toon from diff.","gl_FragColor = vec4(base * (0.25 + toon), 1.0);"],
+  tip:"Try levels = 2.0 and 5.0 to see the bands change.",
+  vs:VS_BASE, fs:FS_BASE,
+  sol:{vs:VS_BASE, fs:fs(LIGHT+"  float toon = floor(diff * 3.0) / 3.0;\n  vec3 base = vec3(1.0, 0.4, 0.2);\n  gl_FragColor = vec4(base * (0.25 + toon), 1.0);\n")} },
+
+{ id:"wavy", title:"Wavy surface (vertex displacement)", edit:"V",
+  concept:`<p>Move each vertex out along its own normal by a sine wave. Do it on the <b>model-space</b> <code>position</code>, before the matrices, so the wave sticks to the model:</p>
+<pre><code>float wave = sin(position.y * 8.0 + time * 3.0);
+vec3 p = position + normal * 0.08 * wave;
+vec4 pos = modelViewMatrix * vec4(p, 1.0);</code></pre>
+<p>8.0 sets how many waves, 3.0 the speed, 0.08 how far they move.</p>`,
+  task:`<p>This vertex shader already declares <code>time</code> and passes <code>fModelPos</code>. Displace the vertices with amplitude <b>0.08</b>, frequency <b>8.0</b>, speed <b>3.0</b>, and use <code>p</code> instead of <code>position</code> in the modelView line.</p>`,
+  hints:["Add the wave and p lines before vec4 pos = ...","Change vec4(position, 1.0) to vec4(p, 1.0)."],
+  tip:"The normals are not updated, so the lighting is slightly off. That is fine for the lab.",
+  vs:VS_MODEL, fs:fs(LIGHT+"  gl_FragColor = vec4(vec3(1.0, 0.55, 0.2) * (0.2 + 0.8 * diff), 1.0);\n"),
+  sol:{vs:wavyVS("0.08","8.0","3.0"), fs:fs(LIGHT+"  gl_FragColor = vec4(vec3(1.0, 0.55, 0.2) * (0.2 + 0.8 * diff), 1.0);\n")} },
+
+{ id:"stripes", title:"Moving stripes", edit:"F",
+  concept:`<p><code>fract(x)</code> keeps only the part after the decimal point, so it repeats 0..1 forever. <code>step(0.5, x)</code> turns that into hard 0 or 1 bands:</p>
+<pre><code>float s = step(0.5, fract(fModelPos.y * 5.0 - time));
+vec3 c = mix(colourA, colourB, s);</code></pre>
+<p><code>mix(a, b, t)</code> gives a at t = 0 and b at t = 1. Subtracting <code>time</code> slides the stripes.</p>`,
+  task:`<p>Using <code>fModelPos</code> (already passed in), make 5 stripes that slide over time, mixing white <code>vec3(1.0)</code> and blue <code>vec3(0.1, 0.1, 0.8)</code>, then multiply by <code>(0.25 + 0.75 * diff)</code>.</p>`,
+  hints:["vec3 c = mix(vec3(1.0), vec3(0.1, 0.1, 0.8), s);","gl_FragColor = vec4(c * (0.25 + 0.75 * diff), 1.0);"],
+  tip:"Swap fModelPos.y for length(fModelPos) to get rings instead of stripes.",
+  vs:VS_MODEL, fs:fsM(LIGHT+"  gl_FragColor = vec4(vec3(0.8) * (0.25 + 0.75 * diff), 1.0);\n"),
+  sol:{vs:VS_MODEL, fs:fsM(LIGHT+"  float s = step(0.5, fract(fModelPos.y * 5.0 - time));\n  vec3 c = mix(vec3(1.0), vec3(0.1, 0.1, 0.8), s);\n  gl_FragColor = vec4(c * (0.25 + 0.75 * diff), 1.0);\n")} },
+
+{ id:"noise", title:"Noise: dirt and rock", edit:"F",
+  concept:`<p>GLSL has no random function, so we use a <b>hash</b>: a formula that gives a fake-random 0..1 for any position. Blending the hash at the corners of a grid gives smooth <b>value noise</b>.</p>
+<p>The <code>hash</code> and <code>noise</code> functions are already written above <code>main()</code> (helper functions must come before they are used). Call it like:</p>
+<pre><code>float n = noise(fModelPos * 10.0); // 10.0 = blotch size</code></pre>`,
+  task:`<p>Make dirt: <code>n = noise(fModelPos * 10.0)</code>, mix light brown <code>vec3(0.45, 0.3, 0.15)</code> to dark brown <code>vec3(0.2, 0.12, 0.05)</code> by <code>n</code>, then multiply by <code>(0.3 + 0.7 * diff)</code>.</p>`,
+  hints:["vec3 dirt = mix(vec3(0.45, 0.3, 0.15), vec3(0.2, 0.12, 0.05), n);","gl_FragColor = vec4(dirt * (0.3 + 0.7 * diff), 1.0);"],
+  tip:"Try noise(fModelPos * 5.0 + time) for animated, boiling noise.",
+  vs:VS_MODEL, fs:fsM(LIGHT+"  gl_FragColor = vec4(vec3(0.4) * (0.3 + 0.7 * diff), 1.0);\n", NOISE_FN),
+  sol:{vs:VS_MODEL, fs:fsM(LIGHT+"  float n = noise(fModelPos * 10.0);\n  vec3 dirt = mix(vec3(0.45, 0.3, 0.15), vec3(0.2, 0.12, 0.05), n);\n  gl_FragColor = vec4(dirt * (0.3 + 0.7 * diff), 1.0);\n", NOISE_FN)} },
+
+{ id:"slime", title:"Final: living slime", edit:"V",
+  concept:`<p>Top lab demos stack three things: <b>one shape effect</b>, <b>one colour pattern</b>, <b>one lighting recipe</b>. Here you write both shaders from the plain templates.</p>
+<p>Vertex: wave with amplitude <b>0.06</b>, frequency <b>6.0</b>, speed <b>1.5</b>.</p>
+<p>Fragment: the recipe with the slime numbers:</p>
+<pre><code>base      (0.2, 0.8, 0.1)
+specCol   (0.8, 1.0, 0.6)
+shininess 20.0
+rimCol    (0.6, 1.0, 0.3)
+ambient   0.2, rim power 3.0</code></pre>`,
+  task:`<p>Write the full slime from the starter templates: displaced vertices in <code>vertex.glsl</code> (remember <code>uniform float time;</code>) and the lighting recipe in <code>fragment.glsl</code>.</p>`,
+  hints:["Vertex: same as the wavy lesson with 0.06, 6.0, 1.5.","Fragment: same as the gold lesson with the slime numbers.","colour = base * (0.2 + diff) + specCol * spec + rimCol * rim;"],
+  tip:"If you can do this one without hints in 15 minutes, you are ready for the shader part of the test.",
+  vs:VS_BASE, fs:FS_BASE,
+  sol:{vs:wavyVS("0.06","6.0","1.5"), fs:fs(LIGHT+"  vec3 V = normalize(-fPosition);\n  vec3 R = reflect(-L, N);\n  float spec = pow(max(dot(R, V), 0.0), 20.0);\n  float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0);\n  vec3 base = vec3(0.2, 0.8, 0.1);\n  vec3 specCol = vec3(0.8, 1.0, 0.6);\n  vec3 rimCol = vec3(0.6, 1.0, 0.3);\n  vec3 colour = base * (0.2 + diff) + specCol * spec + rimCol * rim;\n  gl_FragColor = vec4(colour, 1.0);\n")} },
+];
+
+
+/* ================= Matrix helpers (column-major) ================= */
+function perspective(fovy, aspect, near, far){
+  const f = 1/Math.tan(fovy/2), nf = 1/(near-far);
+  return [f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0];
+}
+function mul(a,b){ const o=new Array(16); for(let c=0;c<4;c++) for(let r=0;r<4;r++){ let s=0; for(let k=0;k<4;k++) s+=a[k*4+r]*b[c*4+k]; o[c*4+r]=s; } return o; }
+function rotX(t){ const c=Math.cos(t),s=Math.sin(t); return [1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]; }
+function rotY(t){ const c=Math.cos(t),s=Math.sin(t); return [c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]; }
+function trans(x,y,z){ return [1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]; }
+function modelView(yaw,pitch){ return mul(trans(0,0,-3.3), mul(rotX(pitch), rotY(yaw))); }
+function normalMat(m){ return [m[0],m[1],m[2], m[4],m[5],m[6], m[8],m[9],m[10]]; } // rotation-only, so upper 3x3 is enough
+
+/* ================= Meshes ================= */
+function paramMesh(nu, nv, fn){
+  const P=[], N=[], I=[], e=1e-3;
+  for(let j=0;j<=nv;j++) for(let i=0;i<=nu;i++){
+    const u=i/nu, v=j/nv, p=fn(u,v);
+    const du=sub(fn(Math.min(u+e,1),v),fn(Math.max(u-e,0),v)), dv=sub(fn(u,Math.min(v+e,1)),fn(u,Math.max(v-e,0)));
+    let n=cross(du,dv); const L=Math.hypot(n[0],n[1],n[2]);
+    n = L<1e-9 ? norm(p) : [n[0]/L,n[1]/L,n[2]/L];
+    P.push(...p); N.push(...n);
+  }
+  for(let j=0;j<nv;j++) for(let i=0;i<nu;i++){ const a=j*(nu+1)+i, b=a+1, c=a+nu+1, d=c+1; I.push(a,c,b, b,c,d); }
+  return {P:new Float32Array(P), N:new Float32Array(N), I:new Uint16Array(I)};
+}
+function sub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]]}
+function cross(a,b){return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]}
+function norm(a){const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l]}
+const MESHES = {
+  sphere: () => paramMesh(96,64,(u,v)=>{ const th=u*2*Math.PI, ph=v*Math.PI; return [Math.sin(ph)*Math.sin(th), Math.cos(ph), Math.sin(ph)*Math.cos(th)]; }),
+  torus:  () => paramMesh(120,48,(u,v)=>{ const a=u*2*Math.PI, b=v*2*Math.PI, R=0.75, r=0.32; return [(R+r*Math.cos(b))*Math.cos(a), r*Math.sin(b), (R+r*Math.cos(b))*Math.sin(a)]; }),
+  knot:   () => paramMesh(300,32,(u,v)=>{
+    const t=u*2*Math.PI, p=2, q=3, k=t=>{ const r=0.55+0.22*Math.cos(q*t); return [r*Math.cos(p*t), 0.22*Math.sin(q*t)*1.4, r*Math.sin(p*t)]; };
+    const c=k(t), c2=k(t+1e-3), T=norm(sub(c2,c)); let B=norm(cross(T,[0,1,0])); const Nn=cross(B,T);
+    const a=v*2*Math.PI, rr=0.13; return [c[0]+rr*(Math.cos(a)*Nn[0]+Math.sin(a)*B[0]), c[1]+rr*(Math.cos(a)*Nn[1]+Math.sin(a)*B[1]), c[2]+rr*(Math.cos(a)*Nn[2]+Math.sin(a)*B[2])]; }),
+  cube:   () => paramMesh(96,64,(u,v)=>{ const th=u*2*Math.PI, ph=v*Math.PI; const s=[Math.sin(ph)*Math.sin(th), Math.cos(ph), Math.sin(ph)*Math.cos(th)];
+    const e=0.3, sg=x=>Math.sign(x)*Math.pow(Math.abs(x),e); return [sg(s[0])*0.85, sg(s[1])*0.85, sg(s[2])*0.85]; }),
+};
+
+/* ================= WebGL ================= */
+const canvas = document.getElementById("gl");
+const gl = canvas.getContext("webgl", {antialias:true, preserveDrawingBuffer:false});
+
+let mesh = null, buf = {};
+function loadMesh(name){
+  mesh = MESHES[name]();
+  buf.p = buf.p || gl.createBuffer(); buf.n = buf.n || gl.createBuffer(); buf.i = buf.i || gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf.p); gl.bufferData(gl.ARRAY_BUFFER, mesh.P, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf.n); gl.bufferData(gl.ARRAY_BUFFER, mesh.N, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf.i); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.I, gl.STATIC_DRAW);
+}
+
+function compile(type, src){
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){ const log = gl.getShaderInfoLog(s) || "compile failed"; gl.deleteShader(s); return {err:log}; }
+  return {sh:s};
+}
+function build(vsSrc, fsSrc){
+  const v = compile(gl.VERTEX_SHADER, vsSrc); if(v.err) return {err:v.err, where:"V"};
+  const f = compile(gl.FRAGMENT_SHADER, fsSrc); if(f.err){ gl.deleteShader(v.sh); return {err:f.err, where:"F"}; }
+  const p = gl.createProgram(); gl.attachShader(p, v.sh); gl.attachShader(p, f.sh); gl.linkProgram(p);
+  gl.deleteShader(v.sh); gl.deleteShader(f.sh);
+  if(!gl.getProgramParameter(p, gl.LINK_STATUS)){ const log = gl.getProgramInfoLog(p) || "link failed"; gl.deleteProgram(p); return {err:log, where:"L"}; }
+  const u = n => gl.getUniformLocation(p, n);
+  return {prog:p, a:{pos:gl.getAttribLocation(p,"position"), nor:gl.getAttribLocation(p,"normal")},
+    u:{mv:u("modelViewMatrix"), pr:u("projectionMatrix"), nm:u("normalMatrix"), t:u("time"), res:u("resolution")}};
+}
+function draw(P, mv, proj, t, w, h){
+  if(!P) return;
+  gl.useProgram(P.prog);
+  if(P.a.pos>=0){ gl.bindBuffer(gl.ARRAY_BUFFER, buf.p); gl.enableVertexAttribArray(P.a.pos); gl.vertexAttribPointer(P.a.pos,3,gl.FLOAT,false,0,0); }
+  if(P.a.nor>=0){ gl.bindBuffer(gl.ARRAY_BUFFER, buf.n); gl.enableVertexAttribArray(P.a.nor); gl.vertexAttribPointer(P.a.nor,3,gl.FLOAT,false,0,0); }
+  if(P.u.mv) gl.uniformMatrix4fv(P.u.mv,false,new Float32Array(mv));
+  if(P.u.pr) gl.uniformMatrix4fv(P.u.pr,false,new Float32Array(proj));
+  if(P.u.nm) gl.uniformMatrix3fv(P.u.nm,false,new Float32Array(normalMat(mv)));
+  if(P.u.t) gl.uniform1f(P.u.t, t);
+  if(P.u.res) gl.uniform2f(P.u.res, w, h);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf.i);
+  gl.drawElements(gl.TRIANGLES, mesh.I.length, gl.UNSIGNED_SHORT, 0);
+}
+
+
+/* ================= Lab code (from the real Lab 3 files) ================= */
+const block = id => $(id).textContent.replace(/^\n/, "");
+const S31  = block("code-s31");
+const S31C = block("code-s31c");
+const S31M = block("code-s31m");
+const V32  = RES.v32tpl, F32 = RES.f32tpl;              // the empty shaders from Lab3.2.html
+const V_LAMBERT = block("code-v32-lambert"), F_LAMBERT = block("code-f32-lambert"), F_CELL = block("code-f32-cell");
+const V_PHONG = block("code-v32-phong"), F_PHONG = block("code-f32-phong");
+
+// Build a Lab 3.1 script with some sections blanked out, like the handout.
+function gen31(hide){
+  const out = [], lines = S31.split("\n");
+  let skip = null;
+  for(const ln of lines){
+    const m = ln.match(/^\s*\/\/@S (\w+)(?:\|(.*))?$/);
+    if(m){
+      if(hide.includes(m[1])){
+        skip = m[1];
+        if(m[1] === "shaders") out.push("        // TODO: write both shaders", "        const vertexShaderSource = `", "            ", "        `;", "", "        const fragmentShaderSource = `", "            ", "        `;");
+        else out.push("        // TODO: " + m[2]);
+      }
+      continue;
+    }
+    if(/^\s*\/\/@E\s*$/.test(ln)){ skip = null; continue; }
+    if(!skip) out.push(ln);
+  }
+  return out.join("\n");
+}
+const ALL31 = ["shaders","buffers","matrices","locations","bindpos","proj","modelview","draw"];
+const SOL31 = gen31([]);
+
+const SCEN = [
+  {object:"1", light:"0", diffuse:"0", specular:"8", exponent:"10", cellsize:"3"},
+  {object:"1", light:"4", diffuse:"1", specular:"0", exponent:"20", cellsize:"5"},
+  {object:"4", light:"2", diffuse:"6", specular:"8", exponent:"50", cellsize:"4"},
+  {object:"0", light:"3", diffuse:"4", specular:"0", exponent:"5",  cellsize:"2"},
+];
+
+const LAB = [
+/* ---------- Lab 3.1: the WebGL pipeline ---------- */
+{ id:"l31-shaders", track:"Lab 3.1 · WebGL pipeline", kind:"lab31", files:["js"], edit:"js",
+  title:"Step 0: the two shaders",
+  concept:`<p>WebGL draws nothing without a <b>shader program</b>: a vertex shader and a fragment shader written as GLSL text inside JavaScript strings. In the handout both strings are empty.</p>
+<p>The <b>vertex shader</b> runs once per corner of the cube. It receives the corner's position as an <code>attribute</code>, and two matrices as <code>uniform</code>s, and must set <code>gl_Position</code>:</p>
+<pre><code>attribute vec3 a_position;
+uniform mat4 u_modelView;
+uniform mat4 u_projection;
+
+void main() {
+    gl_Position = u_projection * u_modelView * vec4(a_position, 1.0);
+}</code></pre>
+<p>Read the multiplication right to left: the point goes through the modelview first (move the cube), then the projection (perspective). <code>1.0</code> as the 4th number marks it as a point.</p>
+<p>The <b>fragment shader</b> runs per pixel and sets <code>gl_FragColor</code>. In WebGL, fragment shaders <b>must</b> start with a precision line, or they fail to compile:</p>
+<pre><code>precision mediump float;
+void main() {
+    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+}</code></pre>`,
+  task:`<p>Fill in both empty shader strings so the cube renders <b>solid red</b>. The rest of the script is already written and looks up the names <code>a_position</code>, <code>u_modelView</code> and <code>u_projection</code>, so use exactly those.</p><p>Press <b>Run</b> (or Ctrl+Enter) to see the result.</p>`,
+  hints:["The names in the shader must match the strings passed to getAttribLocation / getUniformLocation further down.","Fragment shader first line: precision mediump float;","gl_Position = u_projection * u_modelView * vec4(a_position, 1.0);"],
+  tip:"Test trap: forgetting the precision line gives 'No precision specified for (float)'.",
+  start:{js:gen31(["shaders"])}, sol:{js:SOL31}, check:{type:"match"} },
+
+{ id:"l31-buffers", track:"Lab 3.1 · WebGL pipeline", kind:"lab31", files:["js"], edit:"js",
+  title:"Step 1: buffers for vertices and indices",
+  concept:`<p>The cube's numbers live in JavaScript arrays. The GPU cannot read those, so you copy them into <b>buffers</b> (GPU memory). Always three calls:</p>
+<pre><code>const vertexBuffer = gl.createBuffer();                 // 1. make it
+gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);           // 2. select it
+gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW); // 3. fill it</code></pre>
+<div class="tablewrap"><table><tr><th>Target</th><th>Holds</th></tr>
+<tr><td><code>gl.ARRAY_BUFFER</code></td><td>per-vertex data: positions, colours, normals</td></tr>
+<tr><td><code>gl.ELEMENT_ARRAY_BUFFER</code></td><td>indices: which 3 vertices make each triangle</td></tr></table></div>
+<p>This cube is an <b>IFS</b> (indexed face set): 8 corner positions are stored once, and 36 indices reuse them to build 12 triangles.</p>`,
+  task:`<p>Under <code>// Create buffer for vertices and indices</code>, create <code>vertexBuffer</code> (filled with <code>vertices</code>) and <code>indexBuffer</code> (filled with <code>indices</code>). Later code uses those two names.</p>`,
+  hints:["Index buffer: gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);","gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);"],
+  tip:"bufferData always fills whatever buffer is currently bound to that target. Bind first, then fill.",
+  start:{js:gen31(["buffers"])}, sol:{js:SOL31}, check:{type:"match"} },
+
+{ id:"l31-attribs", track:"Lab 3.1 · WebGL pipeline", kind:"lab31", files:["js"], edit:"js",
+  title:"Steps 3–4: locations and the position attribute",
+  concept:`<p>JavaScript talks to shader variables through <b>locations</b>. Ask for each by its exact name in the shader:</p>
+<pre><code>const positionLoc  = gl.getAttribLocation(shaderProgram, 'a_position');
+const modelViewLoc = gl.getUniformLocation(shaderProgram, 'u_modelView');</code></pre>
+<p>Then connect the position buffer to the attribute. <code>vertexAttribPointer</code> describes the buffer that is <b>currently bound</b>:</p>
+<pre><code>gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(positionLoc);</code></pre>
+<div class="tablewrap"><table><tr><th>Argument</th><th>Meaning</th></tr>
+<tr><td><code>3</code></td><td>3 numbers per vertex (x, y, z)</td></tr>
+<tr><td><code>gl.FLOAT</code></td><td>they are Float32</td></tr>
+<tr><td><code>false</code></td><td>don't normalize</td></tr>
+<tr><td><code>0, 0</code></td><td>stride and offset: tightly packed, start at the beginning</td></tr></table></div>`,
+  task:`<p>Write the two missing parts: the three locations (<code>positionLoc</code>, <code>modelViewLoc</code>, <code>projectionLoc</code>) and the three lines under <code>// Bind postion buffer</code>.</p>`,
+  hints:["projectionLoc = gl.getUniformLocation(shaderProgram, 'u_projection');","Attributes use getAttribLocation, uniforms use getUniformLocation. Mixing them up returns -1 / null.","Without enableVertexAttribArray the attribute reads (0,0,0) and nothing appears."],
+  tip:"getAttribLocation returns a number (-1 if not found). getUniformLocation returns an object (null if not found).",
+  start:{js:gen31(["locations","bindpos"])}, sol:{js:SOL31}, check:{type:"match"} },
+
+{ id:"l31-matrices", track:"Lab 3.1 · WebGL pipeline", kind:"lab31", files:["js"], edit:"js",
+  title:"Steps 2, 5, 6: the matrices",
+  concept:`<p>Two 4×4 matrices from the <b>gl-matrix</b> library place the cube on screen:</p>
+<ul><li><b>Projection</b>: the camera lens. <code>mat4.perspective(out, fov, aspect, near, far)</code>.</li>
+<li><b>Modelview</b>: where the cube sits relative to the camera. The camera looks down the −z axis, so the cube must be pushed to negative z to be seen.</li></ul>
+<pre><code>const projectionMatrix = mat4.create();   // starts as identity
+mat4.perspective(projectionMatrix, Math.PI / 4, aspect, 0.1, 100.0);
+gl.uniformMatrix4fv(projectionLoc, false, projectionMatrix);
+
+mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -5]);
+gl.uniformMatrix4fv(modelViewLoc, false, modelViewMatrix);</code></pre>
+<p>gl-matrix functions write into their <b>first</b> argument. In WebGL the <code>transpose</code> argument of <code>uniformMatrix4fv</code> must be <code>false</code>.</p>`,
+  task:`<p>Write the three missing parts: create both matrices, set up the perspective matrix (use the handout's values), and translate the modelview by <code>[0, 0, -5]</code>. Send each matrix to its uniform.</p>`,
+  hints:["const modelViewMatrix = mat4.create(); const projectionMatrix = mat4.create();","const aspect = canvas.width / canvas.height;","Forgetting uniformMatrix4fv leaves the shader with all-zero matrices: nothing draws."],
+  tip:"A cube at z = 0 would surround the camera. -5 puts it in front, giving the square from the handout image.",
+  start:{js:gen31(["matrices","proj","modelview"])}, sol:{js:SOL31}, check:{type:"match"} },
+
+{ id:"l31-draw", track:"Lab 3.1 · WebGL pipeline", kind:"lab31", files:["js"], edit:"js",
+  title:"Step 7: draw with indices",
+  concept:`<p>Because the cube uses indices, draw it with <code>drawElements</code>, not <code>drawArrays</code>:</p>
+<pre><code>gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);</code></pre>
+<ul><li><code>gl.TRIANGLES</code>: every 3 indices make one triangle.</li>
+<li><code>indices.length</code>: 36 (12 triangles × 3).</li>
+<li><code>gl.UNSIGNED_SHORT</code>: matches <code>Uint16Array</code>.</li>
+<li><code>0</code>: start at the first index.</li></ul>`,
+  task:`<p>Under <code>// Draw the cube</code>, bind the index buffer and draw all the triangles.</p>`,
+  hints:["Type must match the array: Uint16Array → gl.UNSIGNED_SHORT.","Count is the number of indices, not triangles."],
+  tip:"drawArrays(mode, first, count) would ignore the indices and read the 8 vertices in order: wrong shape.",
+  start:{js:gen31(["draw"])}, sol:{js:SOL31}, check:{type:"match"} },
+
+{ id:"l31-full", track:"Lab 3.1 · WebGL pipeline", kind:"lab31", files:["js"], edit:"js",
+  title:"Boss: the whole Lab 3.1 from the handout",
+  concept:`<p>This is the handout exactly as given: empty shaders and blank sections. In the test this is what you will face.</p>
+<p>Order to write it in:</p>
+<ol><li>Shaders (attribute, two uniforms, <code>gl_Position</code>; precision + <code>gl_FragColor</code>).</li>
+<li>Buffers: create, bind, bufferData (vertices and indices).</li>
+<li>Matrices: <code>mat4.create()</code> ×2.</li>
+<li>Locations: <code>getAttribLocation</code>, <code>getUniformLocation</code> ×2.</li>
+<li>Position attribute: bind, <code>vertexAttribPointer</code>, enable.</li>
+<li>Projection: <code>mat4.perspective</code>, <code>uniformMatrix4fv</code>.</li>
+<li>Modelview: <code>mat4.translate</code> to z = −5, <code>uniformMatrix4fv</code>.</li>
+<li>Draw: bind index buffer, <code>drawElements</code>.</li></ol>`,
+  task:`<p>Write everything so the page shows the solid red square from the handout. Try it without hints, then time yourself: aim for under 15 minutes.</p>`,
+  hints:["Use the names: vertexBuffer, indexBuffer, modelViewMatrix, projectionMatrix, positionLoc, modelViewLoc, projectionLoc.","If the screen stays black, open the errors below the editor; then check: buffer bound? attribute enabled? matrices sent?"],
+  tip:"Write the code into the empty spots under each handout comment. The comments are your checklist.",
+  start:{js:gen31(ALL31)}, sol:{js:SOL31}, check:{type:"match"} },
+
+{ id:"l31-colour", track:"Lab 3.1 · WebGL pipeline", kind:"lab31", files:["js"], edit:"js",
+  title:"Exercise 3.1a: a colour per vertex",
+  concept:`<p>To colour each corner you add a <b>second attribute</b>, exactly like position, plus a <b>varying</b> to hand the colour to the fragment shader:</p>
+<pre><code>// vertex shader
+attribute vec3 a_color;
+varying vec3 v_color;
+...  v_color = a_color;
+
+// fragment shader
+varying vec3 v_color;
+...  gl_FragColor = vec4(v_color, 1.0);</code></pre>
+<p>The rasterizer <b>interpolates</b> the varying across each triangle, which gives the smooth blends in the handout gif.</p>
+<p>JavaScript side: the same three buffer calls for <code>colors</code>, a <code>getAttribLocation</code> for <code>a_color</code>, then bind + <code>vertexAttribPointer</code> + <code>enableVertexAttribArray</code>.</p>`,
+  task:`<p>Make every vertex its own colour from the <code>colors</code> array. So the checker can compare with the target, also tilt the cube after the translate:</p><pre><code>mat4.rotateX(modelViewMatrix, modelViewMatrix, 0.6);
+mat4.rotateY(modelViewMatrix, modelViewMatrix, 0.8);</code></pre>`,
+  hints:["Use the empty spots under '// Create buffer for colours' and '// Bind color buffer'.","const colorLoc = gl.getAttribLocation(shaderProgram, 'a_color');","gl.vertexAttribPointer(colorLoc, 3, gl.FLOAT, false, 0, 0); then gl.enableVertexAttribArray(colorLoc);","Bind colorBuffer right before its vertexAttribPointer: the pointer grabs whatever is bound."],
+  tip:"Classic bug: binding the colour buffer, then calling vertexAttribPointer for position. Each pointer must follow its own bind.",
+  start:{js:SOL31}, sol:{js:S31C}, check:{type:"match"} },
+
+{ id:"l31-motion", track:"Lab 3.1 · WebGL pipeline", kind:"lab31", files:["js"], edit:"js",
+  title:"Exercise 3.1b: make it spin",
+  concept:`<p>Animation = draw, change the angle, draw again, about 60 times a second. <code>requestAnimationFrame</code> calls your function before the next screen refresh:</p>
+<pre><code>let angle = 0;
+function render() {
+    angle += 0.01;
+    mat4.identity(modelViewMatrix);                       // start fresh each frame
+    mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -5]);
+    mat4.rotate(modelViewMatrix, modelViewMatrix, angle, [1, 1, 0]);
+    gl.uniformMatrix4fv(modelViewLoc, false, modelViewMatrix);
+
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // clear depth too
+    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+    requestAnimationFrame(render);
+}
+render();</code></pre>
+<p><code>mat4.rotate</code> takes an angle in radians and an axis; <code>[1, 1, 0]</code> tumbles it diagonally like the gif.</p>`,
+  task:`<p>Turn the one-off draw into a <code>render()</code> loop that rotates the coloured cube every frame.</p>`,
+  hints:["Move the modelview + draw code into render().","Without mat4.identity each frame the rotation compounds and the cube drifts away.","Without clearing DEPTH_BUFFER_BIT, faces from old frames block new ones."],
+  tip:"Speed is up to you; the check only looks for a colourful cube that moves.",
+  start:{js:S31C}, sol:{js:S31M}, check:{type:"animate"} },
+
+/* ---------- Lab 3.2: lighting and cell shading ---------- */
+{ id:"l32-lambert", track:"Lab 3.2 · lighting + cell shading", kind:"lab32", files:["vs","fs"], edit:"vs",
+  title:"Exercise 3.2a: Lambert shading",
+  concept:`<p>Lab3.2.html is a full program; you only write the two shader strings. The JavaScript already sends these uniforms:</p>
+<div class="tablewrap"><table><tr><th>Uniform</th><th>What it is</th></tr>
+<tr><td><code>modelview</code>, <code>projection</code></td><td>the two matrices (from the trackball)</td></tr>
+<tr><td><code>normalMatrix</code></td><td>turns normals into eye space</td></tr>
+<tr><td><code>lightPosition</code></td><td>vec4: w = 0 means a <b>direction</b>, w = 1 a <b>point</b></td></tr>
+<tr><td><code>diffuseColor</code>, <code>specularColor</code>, <code>specularExponent</code></td><td>material, from the dropdowns</td></tr></table></div>
+<p>The course's lighting equation (Chapter 10.8.2), computed <b>per vertex</b>:</p>
+<pre><code>vec4 eyeCoords = modelview * vec4(a_coords, 1.0);
+gl_Position = projection * eyeCoords;
+vec3 N = normalize(normalMatrix * a_normal);
+vec3 L = (lightPosition.w == 0.0)
+       ? normalize(lightPosition.xyz)
+       : normalize(lightPosition.xyz/lightPosition.w - eyeCoords.xyz);
+vec3 R = -reflect(L, N);
+vec3 V = normalize(-eyeCoords.xyz);
+// dot(L,N) <= 0  → black (facing away)
+// else colour = 0.8*dot(L,N)*diffuse + 0.4*pow(dot(R,V), exp)*specular</code></pre>
+<p>The result goes into the varying <code>v_color</code>; the fragment shader just outputs it.</p>`,
+  task:`<p>Implement the lighting equation in the vertex shader writing <code>v_color</code>, and make the fragment shader output <code>gl_FragColor = v_color;</code>. Use the course's 0.8 and 0.4 factors. The checker tries 4 combinations of object, light and colours.</p>`,
+  hints:["Use if / else for the w == 0.0 test, like the notes.","Inside the else: vec3 color = 0.8 * dot(L, N) * diffuseColor.rgb;","Add specular only when dot(R, V) > 0.0, then v_color = vec4(color, diffuseColor.a);"],
+  tip:"Change the dropdowns in the preview: the target follows your choices, so you can compare any setting.",
+  start:{vs:V32, fs:F32}, sol:{vs:V_LAMBERT, fs:F_LAMBERT}, check:{type:"match", scenarios:SCEN} },
+
+{ id:"l32-cell", track:"Lab 3.2 · lighting + cell shading", kind:"lab32", files:["vs","fs"], edit:"fs",
+  title:"Exercise 3.2b: cell shading",
+  concept:`<p>Cell (toon) shading splits each colour channel into a few <b>bins</b> and paints every pixel with its bin's value. The uniform <code>cellSize</code> (dropdown: 1–50) is the number of bins.</p>
+<pre><code>vec3 shaded = floor(v_color.rgb * cellSize) / cellSize;
+gl_FragColor = vec4(shaded, v_color.a);</code></pre>
+<p>Walk through it with <code>cellSize = 3</code> and a channel of 0.7: 0.7 × 3 = 2.1, floor → 2, 2 / 3 = 0.67. Every value from 0.67 to 0.99 lands on 0.67, which gives the flat bands.</p>
+<p>That matches the handout video: at cellSize 3 the torus shows black, dark grey and light grey rings.</p>`,
+  task:`<p>Your Lambert vertex shader is loaded. In the fragment shader, quantize <code>v_color</code> using <code>cellSize</code>.</p>`,
+  hints:["floor() works on a whole vec3 at once.","Keep the alpha: vec4(shaded, v_color.a)."],
+  tip:"Using round instead of floor gives brighter bands (white appears). The handout video matches floor.",
+  start:{vs:V_LAMBERT, fs:F_LAMBERT}, sol:{vs:V_LAMBERT, fs:F_CELL}, check:{type:"match", scenarios:SCEN} },
+
+{ id:"l32-phong", track:"Lab 3.2 · lighting + cell shading", kind:"lab32", files:["vs","fs"], edit:"fs",
+  title:"Bonus: per-fragment (Phong) lighting",
+  concept:`<p>Same equation, but moved into the <b>fragment shader</b>. The vertex shader now only passes <code>v_normal</code> and <code>v_eyeCoords</code> as varyings, and every pixel does its own lighting.</p>
+<p>Why bother? \"Lighting is not linear\": computing at 3 corners and blending is not the same as computing at every pixel. Per-fragment gives smooth, round highlights; per-vertex ones look blocky on the Rough Sphere.</p>
+<p>Uniforms used in the fragment shader must be declared there too.</p>`,
+  task:`<p>The vertex shader is done. In the fragment shader, declare the uniforms you need and compute the same lighting with <code>v_normal</code> and <code>v_eyeCoords</code> (no cell shading here).</p>`,
+  hints:["N = normalize(normalMatrix * v_normal);","Replace eyeCoords.xyz with v_eyeCoords everywhere.","Output with gl_FragColor instead of v_color."],
+  tip:"Pick Rough Sphere in the preview and compare with your Lambert version: the highlight is much smoother.",
+  start:{vs:V_PHONG, fs:F32.replace("varying vec4 v_color;", "varying vec3 v_normal;\n    varying vec3 v_eyeCoords;")}, sol:{vs:V_PHONG, fs:F_PHONG}, check:{type:"match", scenarios:SCEN} },
+
+/* ---------- Lab 3.3 ---------- */
+{ id:"l33-flex", track:"Lab 3.3 · flex", kind:"lab32", page:"33", files:["vs","fs"], edit:"fs",
+  title:"Exercise 3.3: your own shader",
+  concept:`<p>Lab 3.3 uses the same page as 3.2. Anything goes, as long as you only change the shaders. Ideas that need nothing new from JavaScript:</p>
+<ul><li><b>Ink outline</b>: in the fragment shader, if the surface is nearly side-on (<code>abs(dot(N, V)) &lt; 0.3</code>) paint it black. Needs N and V, so pass normal and eye position as varyings (like the Phong lesson).</li>
+<li><b>Warm/cool (Gooch)</b>: <code>mix(vec3(0.1, 0.1, 0.5), vec3(1.0, 0.7, 0.2), dot(L, N) * 0.5 + 0.5)</code>.</li>
+<li><b>Stripes by position</b>: pass <code>a_coords</code> as a varying, then <code>step(0.5, fract(pos.y * 2.0))</code>.</li>
+<li><b>Puffed shape</b>: in the vertex shader use <code>a_coords + a_normal * 0.3</code>.</li>
+<li><b>Colour by normal</b>: <code>normalize(normalMatrix * a_normal) * 0.5 + 0.5</code>.</li></ul>
+<p>Time-based animation needs a <code>time</code> uniform and a render loop in the JavaScript, which this page does not have.</p>`,
+  task:`<p>Make a shader that looks clearly different from plain Lambert. There is no target: the check passes when it compiles and draws something.</p>`,
+  hints:["Start from the cell shader below and add one idea at a time.","Keep the attribute names a_coords and a_normal: the JavaScript looks them up."],
+  tip:"Combine two ideas, for example cell shading + ink outline, for a comic look like the Cell picture in the handout.",
+  start:{vs:V_LAMBERT, fs:F_CELL}, sol:{vs:V_PHONG.replace("varying vec3 v_eyeCoords;","varying vec3 v_eyeCoords;\n    uniform mat3 normalMatrix;\n    varying vec3 v_n;").replace("v_normal = normalize(a_normal);","v_normal = normalize(a_normal);\n        v_n = normalize(normalMatrix * a_normal);"),
+    fs:`#ifdef GL_FRAGMENT_PRECISION_HIGH
+       precision highp float;
+    #else
+       precision mediump float;
+    #endif
+    varying vec3 v_normal;
+    varying vec3 v_eyeCoords;
+    varying vec3 v_n;
+    uniform vec4 lightPosition;
+    uniform float cellSize;
+
+    void main() {
+        vec3 N = normalize(v_n);
+        vec3 V = normalize(-v_eyeCoords);
+        vec3 L = lightPosition.w == 0.0 ? normalize(lightPosition.xyz)
+                                         : normalize(lightPosition.xyz / lightPosition.w - v_eyeCoords);
+        float d = dot(L, N) * 0.5 + 0.5;                 // 0..1, never black
+        d = floor(d * cellSize) / cellSize;              // toon bands
+        vec3 cool = vec3(0.15, 0.2, 0.55), warm = vec3(1.0, 0.75, 0.3);
+        vec3 c = mix(cool, warm, d);                     // Gooch warm/cool
+        if (abs(dot(N, V)) < 0.3) c = vec3(0.0);         // ink outline
+        gl_FragColor = vec4(c, 1.0);
+    }`}, check:{type:"free"} },
+];
+
+const LESSONS = LAB.concat(GYM.map(L => ({ id:L.id, track:"GLSL gym · Shdr-style extras", kind:"gym", files:["vs","fs"], edit:L.edit==="V"?"vs":"fs",
+  title:L.title, concept:L.concept, task:L.task, hints:L.hints, tip:L.tip, start:{vs:L.vs, fs:L.fs}, sol:L.sol, check:{type:"gym"} })));
+
+/* ================= Saved progress (per viewer, optional) ================= */
+const KEY = "shaderdojo.v2";
+let store = { done:{}, code:{}, cur:0 };
+try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s) store = Object.assign(store, s); } catch(e) {}
+try { const old = JSON.parse(localStorage.getItem("shaderdojo.v1") || "null"); if(old && old.done) for(const k in old.done) if(!(k in store.done)) store.done[k] = old.done[k]; } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e) {} }
+
+/* ================= Editor ================= */
+const FILE_LABEL = { js:"Lab3.1.html · script", vs:"vertexShaderSource", fs:"fragmentShaderSource" };
+const GYM_LABEL = { vs:"vertex.glsl", fs:"fragment.glsl" };
+let cur = Math.min(store.cur|0, LESSONS.length-1), file = "fs", code = {}, errLines = {};
+const ta = $("code"), gutter = $("gutter");
+const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const L = () => LESSONS[cur];
+
+function renderTabs(){
+  const head = $("tabs"); head.querySelectorAll(".tab").forEach(t => t.remove());
+  const lab = L().kind === "gym" ? GYM_LABEL : FILE_LABEL;
+  L().files.slice().reverse().forEach(f => {
+    const b = document.createElement("button"); b.className = "tab" + (L().edit===f ? " edit" : ""); b.setAttribute("role","tab");
+    b.setAttribute("aria-selected", f===file); b.innerHTML = esc(lab[f]) + '<span class="dot"></span>';
+    b.onclick = () => { file = f; renderTabs(); showFile(); };
+    head.insertBefore(b, head.firstChild);
+  });
+  $("runBtn").hidden = L().kind !== "lab31";
+}
+function showFile(){ ta.value = code[file] || ""; paintGutter(); }
+function paintGutter(){
+  const n = ta.value.split("\n").length, errs = errLines[file] || [];
+  let s = ""; for(let i=1;i<=n;i++) s += (errs.includes(i) ? `<span class="e">${i}</span>` : i) + "\n";
+  gutter.innerHTML = s; gutter.scrollTop = ta.scrollTop;
+}
+function persist(){ store.code[L().id] = Object.assign({}, code); save(); }
+function setStatus(txt, cls){ $("status").textContent = txt; $("status").className = "status " + (cls||""); }
+function showErrors(lines){ if(lines && lines.length){ $("errors").textContent = lines.join("\n"); $("errors").hidden = false; } else $("errors").hidden = true; }
+
+let tmr = null;
+ta.addEventListener("input", () => {
+  code[file] = ta.value; paintGutter(); persist();
+  if(L().kind === "lab31"){ setStatus("edited · press Run", ""); return; }
+  clearTimeout(tmr); tmr = setTimeout(run, L().kind === "gym" ? 300 : 500);
+});
+ta.addEventListener("scroll", () => { gutter.scrollTop = ta.scrollTop; });
+ta.addEventListener("keydown", e => {
+  if((e.ctrlKey || e.metaKey) && e.key === "Enter"){ e.preventDefault(); run(); return; }
+  if(e.key === "Tab" && !e.shiftKey){ e.preventDefault(); const s=ta.selectionStart, en=ta.selectionEnd; ta.value = ta.value.slice(0,s)+"    ".slice(0, L().kind==="gym"?2:4)+ta.value.slice(en); ta.selectionStart=ta.selectionEnd=s+(L().kind==="gym"?2:4); ta.dispatchEvent(new Event("input")); }
+  if(e.key === "Enter"){ e.preventDefault(); const s=ta.selectionStart; const line=ta.value.slice(0,s).split("\n").pop(); const ind=(line.match(/^\s*/)||[""])[0]; ta.value=ta.value.slice(0,s)+"\n"+ind+ta.value.slice(ta.selectionEnd); ta.selectionStart=ta.selectionEnd=s+1+ind.length; ta.dispatchEvent(new Event("input")); }
+});
+$("runBtn").onclick = () => run();
+
+/* ================= Lesson rendering ================= */
+function renderLesson(){
+  const l = L(), done = !!store.done[l.id];
+  const solBlocks = l.files.map(f => `<h3>Solution: ${esc((l.kind==="gym"?GYM_LABEL:FILE_LABEL)[f])}</h3><pre><code>${esc(l.sol[f])}</code></pre>`).join("");
+  $("lesson").innerHTML =
+    `<div class="kicker"><span class="trackchip">${esc(l.track)}</span>${done ? "passed" : ""}</div>
+     <h2>${l.title}</h2>
+     <h3>Concept</h3>${l.concept}
+     <div class="task"><b class="lbl">Your task</b>${l.task}</div>
+     <div class="tip">${l.tip}</div>
+     <h3>Stuck?</h3>
+     <div class="hintbox" id="hints"></div>
+     <div class="btnrow" style="margin-top:8px"><button class="btn" id="hintBtn">Show a hint (${l.hints.length})</button><button class="btn ghost" id="solBtn">Show solution</button></div>
+     <div class="sol" id="sol" hidden>${solBlocks}<button class="btn" id="loadSol">Load solution into editor</button></div>`;
+  let shown = 0;
+  $("hintBtn").onclick = () => { if(shown < l.hints.length){ const d=document.createElement("div"); d.className="hint"; d.textContent=l.hints[shown++]; $("hints").appendChild(d); $("hintBtn").textContent = shown<l.hints.length ? `Show another hint (${l.hints.length-shown} left)` : "No more hints"; } };
+  $("solBtn").onclick = () => { const s=$("sol"); s.hidden=!s.hidden; $("solBtn").textContent = s.hidden ? "Show solution" : "Hide solution"; };
+  $("loadSol").onclick = () => { code = Object.assign({}, l.sol); showFile(); persist(); run(); };
+  $("lesson").scrollTop = 0;
+}
+function renderPicker(){
+  const sel = $("lessonSel"); sel.innerHTML = ""; let grp = null, last = "";
+  LESSONS.forEach((l,i) => {
+    if(l.track !== last){ grp = document.createElement("optgroup"); grp.label = l.track; sel.appendChild(grp); last = l.track; }
+    const o = document.createElement("option"); o.value = i; o.textContent = `${store.done[l.id] ? "✓" : "○"}  ${l.title}`; grp.appendChild(o);
+  });
+  sel.value = cur;
+  const n = LESSONS.filter(l => store.done[l.id]).length;
+  $("bar").style.width = (100*n/LESSONS.length) + "%"; $("progtxt").textContent = `${n} / ${LESSONS.length} passed`;
+}
+function goto(i){
+  cur = (i + LESSONS.length) % LESSONS.length; store.cur = cur; save();
+  const l = L();
+  code = Object.assign({}, store.code[l.id] || l.start);
+  file = l.edit; errLines = {};
+  const isGym = l.kind === "gym";
+  $("gl").hidden = !isGym; $("gymCtrl").hidden = !isGym; $("labFrame").hidden = isGym; $("labCtrl").hidden = isGym;
+  $("thumb").hidden = isGym || !showLabT || l.check.type === "free"; $("tgtLbl").hidden = isGym ? !showT : (!showLabT || l.check.type === "free");
+  $("youLbl").textContent = isGym ? "Your shader" : "Your page"; $("youLbl").hidden = l.kind === "lab32";
+  $("msg").textContent = isGym ? "Your render is compared pixel by pixel with the target at three fixed times. Over 99.5% of pixels must match."
+    : l.check.type === "free" ? "No target here: the check passes when your shader compiles and draws."
+    : l.check.type === "animate" ? "The check looks for a multi-coloured cube that moves."
+    : l.check.scenarios ? "The check sets 4 combinations of object, light and colours on both pages and compares the pictures."
+    : "The check compares your canvas with the target canvas pixel by pixel.";
+  $("score").textContent = "–"; $("score").className = "score";
+  renderLesson(); renderPicker(); renderTabs(); showFile();
+  if(isGym){ const t = build(l.sol.vs, l.sol.fs); if(targetP) gl.deleteProgram(targetP.prog); targetP = t.prog ? t : null; }
+  else loadFrame($("tgtFrame"), l, l.sol);
+  run();
+}
+$("prev").onclick = () => goto(cur-1); $("next").onclick = () => goto(cur+1);
+$("lessonSel").onchange = e => goto(+e.target.value);
+$("resetBtn").onclick = () => { delete store.code[L().id]; save(); code = Object.assign({}, L().start); showFile(); run(); };
+$("copyBtn").onclick = async () => {
+  const txt = L().files.map(f => "// " + ((L().kind==="gym"?GYM_LABEL:FILE_LABEL)[f]) + "\n" + code[f]).join("\n\n");
+  try { await navigator.clipboard.writeText(txt); $("copyBtn").textContent = "Copied"; }
+  catch(e){ ta.focus(); ta.select(); $("copyBtn").textContent = "Selected, press Ctrl+C"; }
+  setTimeout(() => { $("copyBtn").textContent = "Copy code"; }, 1800);
+};
+
+function run(){ if(L().kind === "gym") rebuildGym(); else runLab(); }
+
+/* ================= GLSL gym engine (in-page WebGL) ================= */
+let userP = null, targetP = null;
+function rebuildGym(){
+  if(!gl) return;
+  const r = build(code.vs, code.fs);
+  errLines = {};
+  if(r.prog){ if(userP) gl.deleteProgram(userP.prog); userP = r; setStatus("compiled","ok"); showErrors(null); }
+  else {
+    const name = r.where==="V" ? "vertex.glsl" : r.where==="F" ? "fragment.glsl" : "link";
+    const key = r.where==="V" ? "vs" : "fs";
+    const lines = r.err.split("\n").filter(l => l.replace(/[\0\s]/g,"").length).map(l => {
+      const m = l.match(/ERROR:\s*\d+:(\d+):\s*(.*)/);
+      if(m && r.where!=="L"){ (errLines[key] = errLines[key] || []).push(+m[1]); return `${name} line ${m[1]}: ${m[2]}`; }
+      return `${name}: ${l.replace(/^ERROR:\s*/,"")}`;
+    });
+    if(userP) lines.push("(The preview keeps showing your last working version.)");
+    showErrors(lines); setStatus(r.where==="L" ? "link error" : "error in " + name, "err");
+  }
+  paintGutter();
+}
+let yaw = 0.6, pitch = 0.3, spin = true, runTime = true, showT = true, showLabT = true, t = 0, last = performance.now(), drag = null;
+canvas.addEventListener("pointerdown", e => { drag = {x:e.clientX, y:e.clientY}; canvas.setPointerCapture(e.pointerId); canvas.style.cursor="grabbing"; });
+canvas.addEventListener("pointermove", e => { if(!drag) return; yaw += (e.clientX-drag.x)*0.01; pitch = Math.max(-1.4, Math.min(1.4, pitch + (e.clientY-drag.y)*0.01)); drag = {x:e.clientX, y:e.clientY}; });
+canvas.addEventListener("pointerup", () => { drag = null; canvas.style.cursor="grab"; });
+$("spinBtn").onclick = () => { spin=!spin; $("spinBtn").textContent = spin?"Pause spin":"Resume spin"; };
+$("timeBtn").onclick = () => { runTime=!runTime; $("timeBtn").textContent = runTime?"Pause time":"Resume time"; };
+$("tgtBtn").onclick = () => { showT=!showT; $("tgtBtn").textContent = showT?"Hide target":"Show target"; $("tgtLbl").hidden=!showT; };
+$("tgtBtn2").onclick = () => { showLabT=!showLabT; $("tgtBtn2").textContent = showLabT?"Hide target":"Show target"; $("thumb").hidden = !showLabT || L().check.type==="free"; $("tgtLbl").hidden = $("thumb").hidden; };
+$("meshSel").onchange = e => loadMesh(e.target.value);
+if(matchMedia("(prefers-reduced-motion: reduce)").matches){ spin=false; $("spinBtn").textContent="Resume spin"; }
+function hexRGB(s){ const m = s.match(/^#([0-9a-f]{6})$/i); if(!m) return [0.9,0.9,0.92]; const n=parseInt(m[1],16); return [(n>>16&255)/255,(n>>8&255)/255,(n&255)/255]; }
+function frame(now){
+  const dt = Math.min(0.1,(now-last)/1000); last = now;
+  requestAnimationFrame(frame);
+  if(L().kind !== "gym"){ drawThumb(); return; }
+  if(runTime) t += dt; if(spin && !drag) yaw += dt*0.4;
+  $("clock").textContent = "time = " + t.toFixed(2);
+  const dpr = Math.min(2, window.devicePixelRatio||1), w = Math.max(1, Math.round(canvas.clientWidth*dpr)), h = Math.max(1, Math.round(canvas.clientHeight*dpr));
+  if(canvas.width!==w || canvas.height!==h){ canvas.width=w; canvas.height=h; }
+  const c = hexRGB(getComputedStyle(document.documentElement).getPropertyValue("--sunk").trim());
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.disable(gl.SCISSOR_TEST); gl.viewport(0,0,w,h); gl.clearColor(c[0],c[1],c[2],1); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+  const mv = modelView(yaw,pitch), asp = w/h, fovy = asp < 1 ? 2*Math.atan(Math.tan(0.375)/asp) : 0.75;
+  draw(userP, mv, perspective(fovy, asp, 0.1, 50), t, w, h);
+  const ins = Math.round(Math.min(w,h)*0.34);
+  $("viewWrap").style.setProperty("--inset", (ins/dpr)+"px");
+  if(showT && targetP){
+    const x = w-ins-Math.round(10*dpr), y = Math.round(10*dpr);
+    gl.enable(gl.SCISSOR_TEST); gl.scissor(x-2,y-2,ins+4,ins+4); gl.clearColor(0.9,0.53,0.25,1); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.scissor(x,y,ins,ins); gl.clearColor(0.07,0.08,0.1,1); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    gl.viewport(x,y,ins,ins); draw(targetP, mv, perspective(0.75,1,0.1,50), t, ins, ins);
+    gl.disable(gl.SCISSOR_TEST);
+  }
+}
+const S = 128; let fbo = null;
+function ensureFBO(){
+  if(fbo) return fbo;
+  const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,S,S,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  const rb = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rb); gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, S, S);
+  const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+  return fbo = f;
+}
+function snapGym(P, time){
+  gl.bindFramebuffer(gl.FRAMEBUFFER, ensureFBO()); gl.disable(gl.SCISSOR_TEST); gl.viewport(0,0,S,S);
+  gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST);
+  draw(P, modelView(0.7,0.35), perspective(0.75,1,0.1,50), time, S, S);
+  const px = new Uint8Array(S*S*4); gl.readPixels(0,0,S,S,gl.RGBA,gl.UNSIGNED_BYTE,px);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); return px;
+}
+function checkGym(){
+  if(!userP || $("status").classList.contains("err")) return fail("Fix the compile error first. The red line numbers show where.");
+  let ok=0, count=0;
+  for(const time of [0.6, 1.9, 4.3]){
+    const a = snapGym(userP, time), b = snapGym(targetP, time);
+    for(let i=0;i<a.length;i+=4){
+      const ca=a[i+3]>0, cb=b[i+3]>0; if(!ca && !cb) continue; count++;
+      if(ca!==cb) continue;
+      if(Math.max(Math.abs(a[i]-b[i]), Math.abs(a[i+1]-b[i+1]), Math.abs(a[i+2]-b[i+2])) <= 6) ok++;
+    }
+  }
+  grade(count ? ok/count : 0, 0.995);
+}
+
+/* ================= Lab engine (the real lab pages, in a frame) ================= */
+const PRELUDE = `(function(){
+  var og = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function(t, a){ if(/webgl/.test(t)) a = Object.assign({}, a||{}, {preserveDrawingBuffer:true}); return og.call(this, t, a); };
+  function send(m, line){ try{ parent.postMessage({dojo:"err", tok:"__TOK__", msg:String(m), line:line||0}, "*"); }catch(e){} }
+  window.alert = function(m){ send(m); };
+  window.addEventListener("error", function(e){ send(e.message, e.lineno); });
+  var ce = console.error; console.error = function(){ send([].slice.call(arguments).join(" ")); ce.apply(console, arguments); };
+})();`;
+const CSS31 = `html,body{margin:0;height:100%;background:#000;overflow:hidden}body{display:grid;place-items:center}canvas{width:100vmin;height:100vmin;display:block}`;
+const CSS32 = `body{margin:6px 8px;font:12px/1.35 system-ui,sans-serif;background:#eee;color:#111}h2{display:none}#message{margin:0 0 4px}p{width:auto!important;margin:0 0 4px;text-align:left!important}label{white-space:normal}select{font-size:11px;max-width:150px}br{display:none}label{display:inline-block;margin:0 8px 3px 0}#canvas-holder canvas{width:min(100%, calc(100vh - 110px))!important;height:auto!important;display:block}`;
+
+function buildDoc(l, c, tok){
+  const PRE = PRELUDE.replace("__TOK__", tok || "x");
+  if(l.kind === "lab31"){
+    const pre = `<!doctype html><html><head><meta charset="utf-8"><style>${CSS31}</style><script>${PRE}<\/script><script>${RES.glm}<\/script></head><body><canvas id="webgl-canvas" width="500" height="500"></canvas>\n<script>\n`;
+    return { html: pre + c.js + "\n<\/script></body></html>", K: pre.split("\n").length };
+  }
+  let h = RES.tpl32;
+  if(l.page === "33") h = h.replace("<title>Can we do Cell Shading</title>", "<title>Doing Something Cool For Marks</title>").replace("<h2>Can we do Cell Shading</h2>", "<h2>Doing Something Cool For Marks</h2>");
+  h = h.replace(/const vertexShaderSource = `[\s\S]*?`;/, () => "const vertexShaderSource = `" + c.vs.replace(/`/g, "") + "`;")
+       .replace(/const fragmentShaderSource = `[\s\S]*?`;/, () => "const fragmentShaderSource = `" + c.fs.replace(/`/g, "") + "`;")
+       .replace('<script src="gl-matrix-min.js.download"><\/script>', () => "<script>" + RES.glm + "<\/script>")
+       .replace('<script src="trackball-rotator.js.download"><\/script>', () => "<script>" + RES.tb + "<\/script>")
+       .replace('<script src="basic-object-models-IFS.js.download"><\/script>', () => "<script>" + RES.ifs + "<\/script>")
+       .replace("<head>", () => "<head><style>" + CSS32 + "</style><script>" + PRELUDE + "<\/script>");
+  return { html: h, K: 0 };
+}
+let liveTok = "";
+function loadFrame(fr, l, c){
+  const tok = String(Math.random()).slice(2);
+  if(fr.id === "labFrame") liveTok = tok;
+  return new Promise(res => {
+    const d = buildDoc(l, c, tok);
+    fr.onload = () => setTimeout(() => res(d), 120);
+    fr.srcdoc = d.html; fr._K = d.K;
+  });
+}
+let labErrs = [], runId = 0;
+window.addEventListener("message", e => {
+  if(!e.data || e.data.dojo !== "err" || e.data.tok !== liveTok) return;
+  labErrs.push(e.data); reportLabErrors();
+});
+function lineOf(text, needle){ const i = text.indexOf(needle); return i < 0 ? 0 : text.slice(0, i).split("\n").length; }
+function reportLabErrors(){
+  const l = L(); errLines = {}; const out = [];
+  for(const er of labErrs){
+    const sm = er.msg.match(/Error in (vertex|fragment) shader:\s*([\s\S]*)/);
+    if(sm){
+      const which = sm[1];
+      for(const ln of sm[2].split("\n")){
+        const m = ln.match(/ERROR:\s*\d+:(\d+):\s*(.*)/); if(!m) { if(ln.replace(/[\0\s]/g,"")) out.push(which + " shader: " + ln.trim()); continue; }
+        if(l.kind === "lab31"){
+          const base = lineOf(code.js, which === "vertex" ? "const vertexShaderSource" : "const fragmentShaderSource");
+          const at = base + (+m[1]) - 1; (errLines.js = errLines.js || []).push(at);
+          out.push(`line ${at} (${which} shader): ${m[2]}`);
+        } else {
+          const key = which === "vertex" ? "vs" : "fs"; (errLines[key] = errLines[key] || []).push(+m[1]);
+          out.push(`${FILE_LABEL[key]} line ${m[1]}: ${m[2]}`);
+        }
+      }
+    } else if(/Link error/.test(er.msg)){ out.push(er.msg.replace(/^Uncaught Error:\s*/,"") + "  (check that varyings match in both shaders)"); }
+    else {
+      const fr = $("labFrame"); let at = 0;
+      if(l.kind === "lab31" && er.line && fr._K) { at = er.line - fr._K + 1; if(at > 0) (errLines.js = errLines.js || []).push(at); }
+      out.push((at > 0 ? `line ${at}: ` : "") + er.msg.replace(/^Uncaught /, ""));
+    }
+  }
+  showErrors(out); paintGutter();
+  if(out.length) setStatus("error", "err");
+}
+async function runLab(){
+  const id = ++runId; labErrs = []; errLines = {}; showErrors(null); paintGutter(); setStatus("running…", "");
+  await loadFrame($("labFrame"), L(), code);
+  if(id !== runId) return;
+  const doc = $("labFrame").contentDocument;
+  const holder = doc && doc.getElementById("canvas-holder");
+  if(holder && /Sorry/.test(holder.textContent)) { labErrs.push({msg: holder.textContent.replace(/^[\s\S]*?context:\s*/, "")}); }
+  if(labErrs.length) reportLabErrors(); else setStatus("running", "ok");
+  if(L().kind === "lab32") mirrorControls();
+}
+function mirrorControls(){
+  const ud = $("labFrame").contentDocument, td = $("tgtFrame").contentDocument; if(!ud || !td) return;
+  ud.querySelectorAll("select").forEach(s => s.addEventListener("change", () => { const t = td.getElementById(s.id); if(t){ t.value = s.value; t.dispatchEvent(new Event("change")); } }));
+  const rb = ud.getElementById("reset"); if(rb) rb.addEventListener("click", () => { const t = td.getElementById("reset"); if(t) t.click(); });
+}
+$("reloadBtn").onclick = () => { loadFrame($("tgtFrame"), L(), L().sol); run(); };
+
+function frameCanvas(fr){ try { return fr.contentDocument.querySelector("canvas"); } catch(e){ return null; } }
+const scratch = document.createElement("canvas"); scratch.width = scratch.height = S; const sctx = scratch.getContext("2d", {willReadFrequently:true});
+function snapFrame(fr){
+  const c = frameCanvas(fr); sctx.fillStyle = "#000"; sctx.fillRect(0,0,S,S);
+  if(c) try { sctx.drawImage(c, 0, 0, S, S); } catch(e){}
+  return sctx.getImageData(0,0,S,S).data.slice();
+}
+const thumb = $("thumb"), tctx = thumb.getContext("2d"); let lastThumb = 0;
+function drawThumb(){
+  const now = performance.now(); if(thumb.hidden || now - lastThumb < 120) return; lastThumb = now;
+  const c = frameCanvas($("tgtFrame")); if(!c) return;
+  try { tctx.drawImage(c, 0, 0, thumb.width, thumb.height); } catch(e){}
+}
+function applyScenario(fr, sc){
+  const d = fr.contentDocument; if(!d) return;
+  const r = d.getElementById("reset"); if(r) r.click();
+  for(const k of ["object","light","diffuse","specular","exponent","cellsize"]){ const s = d.getElementById(k); if(s && sc[k] != null){ s.value = sc[k]; s.dispatchEvent(new Event("change")); } }
+}
+function compare(a, b){
+  const bg = [b[0], b[1], b[2]]; let ok = 0, count = 0;
+  for(let i=0;i<a.length;i+=4){
+    const da = Math.max(Math.abs(a[i]-bg[0]), Math.abs(a[i+1]-bg[1]), Math.abs(a[i+2]-bg[2]));
+    const db = Math.max(Math.abs(b[i]-bg[0]), Math.abs(b[i+1]-bg[1]), Math.abs(b[i+2]-bg[2]));
+    if(da <= 8 && db <= 8) continue; count++;
+    if(Math.max(Math.abs(a[i]-b[i]), Math.abs(a[i+1]-b[i+1]), Math.abs(a[i+2]-b[i+2])) <= 10) ok++;
+  }
+  return {ok, count};
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function checkLab(){
+  const l = L(), uf = $("labFrame"), tf = $("tgtFrame");
+  if($("status").classList.contains("err")) return fail("Fix the errors first (red line numbers in the editor).");
+  if(L().kind === "lab31" && /edited/.test($("status").textContent)) { await runLab(); await wait(200); if($("status").classList.contains("err")) return fail("Fix the errors first (red line numbers in the editor)."); }
+  if(l.check.type === "free"){
+    const a = snapFrame(uf); let n = 0; const bg = [a[0],a[1],a[2]];
+    for(let i=0;i<a.length;i+=4) if(Math.max(Math.abs(a[i]-bg[0]),Math.abs(a[i+1]-bg[1]),Math.abs(a[i+2]-bg[2])) > 8) n++;
+    const share = n / (S*S);
+    if(share > 0.03){ return pass("Compiles and draws. Show it off, and save a copy for your Lab 3.3 submission."); }
+    return fail("Nothing visible yet. Make sure gl_Position is set and the colour is not the background colour.");
+  }
+  if(l.check.type === "animate"){
+    const a = snapFrame(uf); await wait(450); const b = snapFrame(uf);
+    let moved = 0, lit = 0; const bins = new Array(12).fill(0);
+    for(let i=0;i<a.length;i+=4){
+      if(Math.abs(a[i]-b[i]) + Math.abs(a[i+1]-b[i+1]) + Math.abs(a[i+2]-b[i+2]) > 30) moved++;
+      const r=b[i],g=b[i+1],bl=b[i+2], mx=Math.max(r,g,bl), mn=Math.min(r,g,bl);
+      if(mx > 40){ lit++; if(mx - mn > 40){ let h; if(mx===r) h=((g-bl)/(mx-mn)+6)%6; else if(mx===g) h=(bl-r)/(mx-mn)+2; else h=(r-g)/(mx-mn)+4; bins[Math.floor(h*2)%12]++; } }
+    }
+    const hues = bins.filter(x => x > lit*0.03).length;
+    $("score").textContent = (moved > lit*0.05 ? "moving" : "still");
+    if(lit < S*S*0.05) return fail("No cube visible yet.");
+    if(hues < 4) return fail("The cube is moving? Check: it needs several vertex colours. Only " + hues + " colour groups found.");
+    if(moved < lit*0.05) return fail("The cube is not moving. Is requestAnimationFrame(render) called inside render()?");
+    return pass("Colourful and spinning. That's Exercise 3.1 done.");
+  }
+  let ok = 0, count = 0;
+  const scen = l.check.scenarios || [null];
+  for(const sc of scen){
+    if(sc){ applyScenario(uf, sc); applyScenario(tf, sc); await wait(60); }
+    const r = compare(snapFrame(uf), snapFrame(tf)); ok += r.ok; count += r.count;
+  }
+  if(l.check.scenarios){ applyScenario(uf, SCEN[0]); applyScenario(tf, SCEN[0]); }
+  grade(count ? ok/count : 0, 0.985);
+}
+
+/* ================= Grading ================= */
+function pass(msg){ const l = L(); $("score").className = "score pass"; if($("score").textContent === "–" || $("score").textContent === "✗") $("score").textContent = "✓"; store.done[l.id] = true; save(); renderPicker(); renderLesson(); $("msg").textContent = msg; }
+function fail(msg){ $("score").className = "score fail"; if(!/%|moving|still/.test($("score").textContent)) $("score").textContent = "✗"; $("msg").textContent = msg; }
+function grade(score, need){
+  $("score").textContent = (Math.floor(score*1000)/10).toFixed(1) + "%";
+  if(score >= need) pass(cur < LESSONS.length-1 ? "Match. Lesson passed. Press › for the next one." : "Match. You finished every lesson.");
+  else fail(score > 0.85 ? "Close. Compare the numbers and steps with the task, then check again." : "Not matching yet. Compare with the target in the orange box and reread the task.");
+}
+$("checkBtn").onclick = () => { $("score").textContent = "–"; if(L().kind === "gym") checkGym(); else checkLab(); };
+
+/* ================= Start ================= */
+if(gl) loadMesh("sphere");
+goto(cur);
+requestAnimationFrame(frame);
+
+</script>
+
+</body>
+</html>
